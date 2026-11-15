@@ -20,7 +20,7 @@ mp3 ──분석(말/음악 구분, ONNX)──> 자를 구간 결정 ──> �
 | ffmpeg | PATH에 있어야 함. 설치판은 `_internal\bin\ffmpeg.exe`를 씀. ffprobe는 안 씀 |
 | 작업 폴더 | **`radio2yt` 폴더를 현재 폴더(cwd)로 두고 실행**해야 `engine`, `app` 패키지를 찾는다 |
 | 성능 | 57분 방송 분석 약 27초, 최대 메모리 약 0.87GB |
-| 저장소 | https://github.com/Namjooseung/radio2yt (공개, MIT, 브랜치 `main`) |
+| 저장소 | https://github.com/Namjooseung/sonefm 의 `radio2yt/` (공개, MIT, 브랜치 `main`) |
 
 ## 호출 방법
 

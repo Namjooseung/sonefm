@@ -83,4 +83,4 @@
 - [x] 메모리 절약: 분석 최대 메모리 6.0GB → 0.87GB, 시간 동일(약 27초), 결과 원본과 동일 (56·57화 대조)
 - [ ] 유튜브 업로드: 코드·가짜 서버 테스트(`tests/test_youtube.py`) 완료. Google Cloud 설정 파일을 받은 뒤 실제 업로드 확인 필요
 - [x] 플랫폼용 명령줄(계약 v1): `make-video`, `sonefm-app.json`, `tests/test_cli.py` (v1.1)
-- [x] 설치 파일 제작: `dist\installer\SoneFM-YoutubeEditor-Setup-1.0.exe` (111MB, GitHub Releases v1.0 공개: https://github.com/Namjooseung/radio2yt/releases/tag/v1.0). 다시 만들기: `packaging\build.ps1`. 관리자 권한 없이 설치 가능, ffmpeg·모델 포함(인터넷 불필요). 설치→점검(--selftest)→제거 확인
+- [x] 설치 파일 제작: `dist\installer\SoneFM-YoutubeEditor-Setup-1.0.exe` (111MB, GitHub Releases v1.0 공개 — 옛 단독 저장소라 2026-11-15 통합하며 삭제됨). 다시 만들기: `packaging\build.ps1`. 관리자 권한 없이 설치 가능, ffmpeg·모델 포함(인터넷 불필요). 설치→점검(--selftest)→제거 확인

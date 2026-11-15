@@ -1,6 +1,13 @@
-# 이 저장소는 플랫폼 공통 문서만 관리한다.
-# 앱 폴더(radio2yt, sonefm-schedule, sonefm-platform, 이후 추가 앱)는 각자 저장소라 넣지 않는다.
-/*
-!/.gitignore
-!/*.md
-!/docs/
+# 앱별 제외(.venv, dist, 빌드 산출물 등)는 각 앱 폴더의 .gitignore가 맡는다
+
+# 설치 파일 모음 (GitHub Releases에 올린다)
+배포/
+
+# 이 PC 전용 Claude Code 설정
+.claude/settings.local.json
+
+# 방송국 원본 자료(실제 방송일지·방송실시결과 원본) — 공개 저장소에 올리지 않는다
+sonefm-schedule/기존/
+
+# 디자인 점검 플러그인 세션 캐시
+**/.impeccable/hook.cache.json

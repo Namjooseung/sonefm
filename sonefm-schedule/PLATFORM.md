@@ -23,7 +23,7 @@ SoneFM 96.3 월간 **편성표 데스크톱 앱**(v1.1.0, Windows). 엑셀로 �
 | 화면 | Vue 3 + Vite → HTML 한 파일(`frontend/dist/index.html`)을 pywebview가 `file://`로 로드. **로컬 서버·포트 없음** |
 | DB | SQLite 파일 하나, 저널 모드 DELETE(WAL 금지) |
 | 작업 폴더 | `sonefm-schedule` 폴더를 cwd로 두어야 `app` 패키지를 찾는다 |
-| 저장소 | https://github.com/Namjooseung/sonefm-schedule (브랜치 `main`) |
+| 저장소 | https://github.com/Namjooseung/sonefm 의 `sonefm-schedule/` (브랜치 `main`) |
 
 ## 실행
 

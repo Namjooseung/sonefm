@@ -56,9 +56,9 @@ ffmpeg가 PATH에 있어야 한다. 설치판에는 `_internal/bin/ffmpeg.exe`�
 
 1. `app/__init__.py`의 `__version__`을 올린다.
 2. `.\packaging\build.ps1`을 실행한다. Inno Setup 6이 필요하다.
-3. 커밋하고 push한 뒤 `gh release create v<버전> dist/installer/SoneFM-YoutubeEditor-Setup-<버전>.exe`로 Releases에 올린다.
+3. 커밋하고 push한 뒤 통합 저장소 Releases에 올린다(태그 예: `radio2yt-v<버전>`).
 
-저장소는 https://github.com/Namjooseung/radio2yt (공개, MIT)이다. 커밋 작성자는 noreply 주소를 쓴다.
+저장소는 통합 저장소 https://github.com/Namjooseung/sonefm의 `radio2yt/` 폴더다(공개, 이 폴더는 MIT). 옛 단독 저장소는 2026-11-15 통합하며 삭제했다. 커밋 작성자는 noreply 주소를 쓴다.
 
 ## 남은 일
 
