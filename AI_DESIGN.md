@@ -192,7 +192,7 @@ result = gateway.complete(
 - 등급별 effort 설정 `ai.effort` {light: low, heavy: medium}. thinking·temperature는 보내지 않는다(모델 기본 adaptive). 화면에는 노출하지 않음.
 - off·budget처럼 공급자 호출 전에 막힌 것은 `ai_calls`에 기록하지 않는다. 재시도가 있으면 두 호출의 토큰·비용을 합쳐 한 행.
 - JSON 스키마 검증은 새 의존성 없이 부분 집합(type, properties, required, additionalProperties:false, enum, items, minimum/maximum)만 직접 구현. 다른 키워드는 개발 중 오류.
-- ClaudeProvider는 키를 생성자에만 넘기고, 생성 중 `ANTHROPIC_*` 환경 변수를 잠시 치워 SDK가 환경의 주소·헤더를 쓰지 못하게 한다. anthropic 2.8.0은 API 키를 `Authorization: Bearer`로 보낸다(SDK 동작). 실제 서버 인증은 `pytest --real-ai`로 처음 확인한다.
+- ClaudeProvider는 키를 생성자에만 넘기고, 생성 중 `ANTHROPIC_*` 환경 변수를 잠시 치워 SDK가 환경의 주소·헤더를 쓰지 못하게 한다. anthropic 2.8.0은 API 키를 `Authorization: Bearer`로 보낸다(SDK 동작). 2026-11-15 `pytest --real-ai` 통과와 설정 화면 [연결 확인](Haiku)으로 실제 서버 인증·모델 ID·effort를 확인했다(개발용 개인 키, 떠나기 전 체크리스트에서 삭제 대상).
 - 로그에는 공급자 예외의 클래스 이름·상태 코드만. `anthropic` 로거는 WARNING.
 - 서버측 fallbacks, structured outputs(`output_config.format`), 스트리밍은 쓰지 않는다. 계획 JSON 첫 시도 성공률을 2단계에서 재 보고 필요하면 structured outputs를 검토한다.
 
