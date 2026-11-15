@@ -4,10 +4,12 @@ import { ref } from 'vue'
 import ScheduleView from './views/ScheduleView.vue'
 import ProgramsView from './views/ProgramsView.vue'
 import SettingsView from './views/SettingsView.vue'
+import JournalView from './views/JournalView.vue'
 
 const MENUS = [
   { key: 'schedule', label: '편성표', view: ScheduleView },
   { key: 'programs', label: '프로그램', view: ProgramsView },
+  { key: 'journal', label: '방송일지', view: JournalView },
   { key: 'settings', label: '설정', view: SettingsView },
 ]
 const LATER = ['보고서', '유튜브']

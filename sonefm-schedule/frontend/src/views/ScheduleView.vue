@@ -218,18 +218,6 @@ async function exportExcel() {
   if (!r.cancelled) flash(r.message)
 }
 
-// ── 방송일지 (편성표 그대로, 이 달 1일~말일 하루 1시트) ──
-async function exportJournal() {
-  busy.value = true
-  const r = await api.journalExport(year.value, month.value)
-  busy.value = false
-  if (!r.ok) { flash(r.errors[0], true); return }
-  if (r.cancelled) return
-  const w = r.warnings || []
-  if (w.length) flash(`${r.message} — 확인할 칸 ${w.length}개: ${w.slice(0, 3).join(', ')}${w.length > 3 ? ' 외' : ''}`, true)
-  else flash(r.message)
-}
-
 // ── 찾기 (Ctrl+F): 이 달 소속 주에서 프로그램명으로 칸 찾기 ──
 const searchInput = ref(null)
 const query = ref('')
@@ -375,7 +363,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <button class="btn btn-sm" :disabled="busy || !canUndo" title="Ctrl+Z" @click="doUndo">되돌리기</button>
           <button class="btn btn-sm" @click="logOpen = true">변경 기록</button>
           <button class="btn btn-sm" :disabled="busy" @click="exportExcel">엑셀 내보내기</button>
-          <button class="btn btn-sm" :disabled="busy" @click="exportJournal">방송일지 만들기</button>
           <button class="btn btn-sm" :aria-pressed="panelOpen" @click="panelOpen = !panelOpen">{{ panelOpen ? '패널 닫기' : '패널 열기' }}</button>
         </div>
         <div v-if="errors.length" class="callout callout-danger" role="alert">
