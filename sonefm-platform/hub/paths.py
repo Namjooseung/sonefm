@@ -1,6 +1,7 @@
 """데이터 위치와 설정 파일 (Documents\\SoneFM\\platform\\config.json)."""
 from __future__ import annotations
 
+import copy
 import json
 import os
 import sys
@@ -16,7 +17,26 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "worklog_url": "",         # 업무일지 시트 링크 (있으면 폴더보다 먼저)
     "schedule_inbox": "",      # 편성 직원이 '데이터 내보내기'한 .db가 오는 폴더
     "stale_days": 3,           # 업무일지에 이 날수 안의 날짜가 없으면 경고
+    "ai": {                    # AI_DESIGN.md 4.3. 단가 null = 모름 → 그 모델 호출은 막힌다. 키는 여기 두지 않는다
+        "enabled": True,
+        "models": {"light": "claude-haiku-5-5", "heavy": "claude-sonnet-5-5"},
+        "prices": {m: {"input": None, "output": None, "cache_write": None, "cache_read": None}
+                   for m in ("claude-haiku-5-5", "claude-sonnet-5-5")},   # USD/백만 토큰
+        "limits": {"daily_usd": 1.0, "monthly_usd": 20.0},
+        "masking": {"enabled": True, "names": []},
+        "dev_log": False,
+    },
 }
+
+
+def _merge(base: Any, over: Any) -> Any:
+    """base 모양을 지키며 over를 덮어 쓴다 (빠진 하위 키는 기본값). 딕셔너리만 깊게 합친다."""
+    if not isinstance(base, dict) or not isinstance(over, dict):
+        return copy.deepcopy(over)
+    out = copy.deepcopy(base)
+    for k, v in over.items():
+        out[k] = _merge(base[k], v) if k in base else copy.deepcopy(v)
+    return out
 
 
 def home() -> Path:
@@ -50,19 +70,22 @@ def config_path() -> Path:
 
 
 def load_config() -> dict[str, Any]:
-    cfg = dict(DEFAULT_CONFIG)
+    cfg = copy.deepcopy(DEFAULT_CONFIG)
     p = config_path()
     if p.exists():
         try:
             raw = json.loads(p.read_text(encoding="utf-8"))
-            cfg.update({k: v for k, v in raw.items() if k in DEFAULT_CONFIG})
+            cfg.update({k: v for k, v in raw.items() if k in DEFAULT_CONFIG and k != "ai"})
+            if isinstance(raw.get("ai"), dict):
+                cfg["ai"] = _merge(DEFAULT_CONFIG["ai"], raw["ai"])
         except (OSError, ValueError):
             pass   # 깨진 설정이면 기본값으로 연다 (화면 설정에서 다시 저장)
     return cfg
 
 
 def save_config(cfg: dict[str, Any]) -> dict[str, Any]:
-    clean = {k: cfg.get(k, v) for k, v in DEFAULT_CONFIG.items()}
+    clean = {k: cfg.get(k, v) for k, v in DEFAULT_CONFIG.items() if k != "ai"}
+    clean["ai"] = _merge(DEFAULT_CONFIG["ai"], cfg.get("ai") or {})
     clean["app_dirs"] = [str(x).strip() for x in clean["app_dirs"] if str(x).strip()]
     try:
         clean["stale_days"] = max(1, int(clean["stale_days"]))

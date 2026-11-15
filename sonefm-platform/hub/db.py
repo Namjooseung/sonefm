@@ -28,6 +28,12 @@ CREATE TABLE IF NOT EXISTS manual_tasks (
     id TEXT PRIMARY KEY, date TEXT NOT NULL, text TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS ai_calls (
+    id TEXT PRIMARY KEY, at TEXT NOT NULL, feature TEXT, tier TEXT, model TEXT,
+    input_tokens INTEGER, output_tokens INTEGER, cache_read_tokens INTEGER, cache_write_tokens INTEGER,
+    cost_usd REAL, duration_ms INTEGER, ok INTEGER, error_kind TEXT, retried INTEGER, masked TEXT
+);
+CREATE INDEX IF NOT EXISTS ai_calls_at ON ai_calls(at);
 """
 
 
@@ -115,6 +121,24 @@ def get_meta(key: str, default: Any = None) -> Any:
     with connect() as c:
         r = c.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
     return json.loads(r["value"]) if r else default
+
+
+def record_ai_call(at: str | None = None, masked: dict[str, int] | None = None, **f: Any) -> None:
+    """AI 호출 한 건. 프롬프트·응답 원문은 받지도 저장하지도 않는다."""
+    with connect() as c:
+        c.execute("INSERT INTO ai_calls (id, at, feature, tier, model, input_tokens, output_tokens, cache_read_tokens,"
+                  " cache_write_tokens, cost_usd, duration_ms, ok, error_kind, retried, masked)"
+                  " VALUES (:id, :at, :feature, :tier, :model, :input_tokens, :output_tokens, :cache_read_tokens,"
+                  " :cache_write_tokens, :cost_usd, :duration_ms, :ok, :error_kind, :retried, :masked)",
+                  {"error_kind": None, **f, "id": uuid.uuid4().hex, "at": at or now(), "ok": int(f["ok"]),
+                   "retried": int(f["retried"]), "masked": json.dumps(masked or {}, ensure_ascii=False)})
+
+
+def ai_cost_sum(start: str, end: str) -> float:
+    """start <= at < end (ISO 로컬 시각 문자열) 구간의 cost_usd 합계."""
+    with connect() as c:
+        return c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM ai_calls WHERE at >= ? AND at < ?",
+                         (start, end)).fetchone()[0]
 
 
 def set_meta(key: str, value: Any) -> None:
