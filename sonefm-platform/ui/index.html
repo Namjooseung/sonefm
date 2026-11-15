@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>SoneFM 업무자동화</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>오늘 업무</h1>
+      <p class="muted" id="today"></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btn-refresh">새로고침</button>
+      <button class="btn" id="btn-add">업무 추가</button>
+      <button class="btn btn-ghost" id="btn-settings">설정</button>
+    </div>
+  </header>
+
+  <section id="banners"></section>
+
+  <section class="sources">
+    <div><span class="label">업무일지</span> <span id="src-worklog"></span></div>
+    <div><span class="label">편성</span> <span id="src-schedule"></span></div>
+  </section>
+
+  <main class="layout">
+    <section class="panel">
+      <table class="tasks">
+        <thead><tr><th>업무</th><th>유형</th><th>상태</th><th></th></tr></thead>
+        <tbody id="tasks"></tbody>
+      </table>
+      <p class="muted empty" id="tasks-empty" hidden>오늘 업무가 없습니다. [업무 추가]로 직접 넣을 수 있습니다.</p>
+    </section>
+
+    <aside class="side">
+      <section class="panel" id="result" hidden></section>
+      <section class="panel">
+        <h2>앱</h2>
+        <ul class="apps" id="apps"></ul>
+      </section>
+      <section class="panel">
+        <h2>최근 실행</h2>
+        <ul class="history" id="history"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="dlg"></dialog>
+  <textarea id="clip" aria-hidden="true" tabindex="-1"></textarea>
+  <script src="app.js"></script>
+</body>
+</html>

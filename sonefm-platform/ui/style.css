@@ -1,0 +1,120 @@
+/* 색·글꼴은 편성표 앱(sonefm-schedule/DESIGN.md, tokens.css)과 같은 토큰을 쓴다. 라이트 모드만. */
+@font-face {
+  font-family: "Pretendard";
+  src: url("fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+}
+
+:root {
+  --gray-050: oklch(0.976 0 0);
+  --gray-100: oklch(0.910 0 0);
+  --gray-200: oklch(0.827 0 0);
+  --gray-600: oklch(0.478 0 0);
+  --gray-700: oklch(0.417 0 0);
+  --gray-900: oklch(0.269 0 0);
+  --blue-100: oklch(0.910 0.048 242);
+  --blue-500: oklch(0.573 0.189 260);
+  --blue-600: oklch(0.488 0.189 260);
+  --green-100: oklch(0.903 0.058 167);
+  --green-700: oklch(0.407 0.090 162);
+  --orange-100: oklch(0.913 0.048 46);
+  --orange-700: oklch(0.439 0.180 29);
+  --red-100: oklch(0.915 0.044 20);
+  --red-700: oklch(0.439 0.180 28);
+  --white: oklch(1 0 0);
+
+  --bg: var(--gray-050);
+  --surface: var(--white);
+  --border: var(--gray-100);
+  --text: var(--gray-900);
+  --text-muted: var(--gray-600);
+  --primary: var(--blue-500);
+  --primary-text: var(--blue-600);
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: "Pretendard", "Malgun Gothic", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  padding: 20px 24px;
+}
+h1 { font-size: 22px; margin: 0; font-weight: 700; }
+h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
+.muted { color: var(--text-muted); }
+.small { font-size: 12px; }
+
+.top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+.top p { margin: 4px 0 0; }
+.actions { display: flex; gap: 8px; }
+
+.btn {
+  font: inherit; font-weight: 500;
+  padding: 7px 14px; border-radius: var(--radius);
+  border: 1px solid var(--gray-200); background: var(--surface); color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { background: var(--gray-050); }
+.btn:disabled { color: var(--text-muted); cursor: default; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: var(--white); }
+.btn-primary:hover { background: var(--blue-600); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-sm { padding: 4px 10px; font-size: 13px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+.banner { padding: 10px 14px; border-radius: var(--radius); margin-bottom: 8px; line-height: 1.5; }
+.banner-danger { background: var(--red-100); color: var(--red-700); }
+.banner-warning { background: var(--orange-100); color: var(--orange-700); }
+
+.sources { display: flex; gap: 28px; margin: 4px 0 14px; color: var(--text-muted); }
+.label { color: var(--text); font-weight: 600; margin-right: 4px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.side { display: flex; flex-direction: column; gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+
+.tasks { width: 100%; border-collapse: collapse; }
+.tasks th { text-align: left; font-weight: 500; color: var(--text-muted); font-size: 12px; padding: 0 8px 8px; }
+.tasks td { padding: 10px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
+.tasks td:last-child { text-align: right; white-space: nowrap; }
+.task-text { line-height: 1.45; }
+.task-date { font-size: 12px; color: var(--text-muted); }
+.empty { padding: 20px 8px; margin: 0; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--gray-050); color: var(--gray-700); }
+.tag-recipe { background: var(--blue-100); color: var(--primary-text); }
+.st-ok { color: var(--green-700); font-weight: 600; }
+.st-partial { color: var(--orange-700); font-weight: 600; }
+.st-error { color: var(--red-700); font-weight: 600; }
+
+.bar { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; margin-top: 4px; width: 140px; }
+.bar > i { display: block; height: 100%; background: var(--primary); transition: width .3s; }
+
+.apps, .history { list-style: none; margin: 0; padding: 0; }
+.apps li, .history li { padding: 8px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.apps li:first-child, .history li:first-child { border-top: 0; }
+.history li { display: block; }
+
+.result h2 { display: flex; justify-content: space-between; }
+.steps { margin: 8px 0 12px; padding-left: 18px; line-height: 1.6; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.skipped { margin: 6px 0; padding-left: 18px; color: var(--orange-700); }
+
+dialog { border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; width: 520px; max-width: 92vw; color: var(--text); font: inherit; }
+dialog::backdrop { background: oklch(0 0 0 / 0.3); }
+dialog h2 { font-size: 17px; }
+.field { margin: 12px 0; }
+.field label { display: block; font-weight: 500; margin-bottom: 4px; }
+.field input[type=text], .field input[type=date], .field input[type=number], .field textarea {
+  width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+}
+.field textarea { min-height: 70px; }
+.file-row { display: flex; gap: 6px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.dlg-error { color: var(--red-700); min-height: 1.2em; margin: 8px 0 0; }
+
+#clip { position: fixed; left: -9999px; top: 0; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--gray-900); color: var(--white); padding: 8px 16px; border-radius: var(--radius); }
