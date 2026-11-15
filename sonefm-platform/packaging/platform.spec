@@ -4,13 +4,17 @@
 # 결과: dist/SoneFMPlatform/SoneFMPlatform.exe  (데이터는 문서\SoneFM\platform 에 저장)
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_submodules
+
 ROOT = Path(SPECPATH).parent
 
 a = Analysis(
     [str(ROOT / "hub" / "main.py")],
     pathex=[str(ROOT)],
     datas=[(str(ROOT / "ui"), "ui"), (str(ROOT / "recipes"), "recipes")],
-    hiddenimports=["hub.api"],
+    # keyring 백엔드는 실행 때 이름으로 찾아 로드해서 자동 탐지가 놓친다. anthropic·httpx2도 동적 import가 많다
+    hiddenimports=["hub.api", "hub.ai.claude", *collect_submodules("keyring.backends"),
+                   *collect_submodules("anthropic"), *collect_submodules("httpx2")],
     excludes=["tkinter", "pytest", "PIL", "PyInstaller"],
     noarchive=False,
 )

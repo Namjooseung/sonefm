@@ -244,7 +244,7 @@ async function aiDialog() {
       <p class="muted small">모델 ID를 바꾸면 저장한 뒤 이 창을 다시 열어 새 모델의 단가를 넣어 주세요.</p></div>
     <div class="ai-section"><h3>단가 (USD / 백만 토큰)</h3>
       <table class="ai-grid"><thead><tr><th>모델</th>${PRICE_COLS.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
-      <p class="muted small">단가가 비어 있으면 그 모델은 호출하지 않습니다. 공식 가격표를 보고 모두 채워 주세요.</p></div>
+      <p class="muted small">비워 두면 기본 단가를 씁니다. 기본 단가가 없는 모델(모델 ID를 바꾼 경우)은 공식 가격표를 보고 직접 채워야 호출됩니다.</p></div>
     <div class="ai-section"><h3>사용 한도 (USD)</h3>
       ${fieldHtml({ name: 'ai-daily', label: '하루 한도', type: 'string', value: val(s.limits.daily_usd), optional: true })}
       ${fieldHtml({ name: 'ai-monthly', label: '한 달 한도', type: 'string', value: val(s.limits.monthly_usd), optional: true })}
@@ -253,6 +253,9 @@ async function aiDialog() {
       <label class="ai-check"><input type="checkbox" id="ai-mask" ${s.masking.enabled ? 'checked' : ''}>보내기 전에 전화번호·주민번호·계좌·이메일과 아래 이름을 가립니다</label>
       ${fieldHtml({ name: 'ai-names', label: '가릴 이름 (한 줄에 하나)', type: 'text', value: s.masking.names.join('\n'), optional: true })}
       <p class="muted small">목록에 있는 이름만 가립니다. 목록에 없는 이름은 그대로 전송됩니다.</p></div>
+    <div class="ai-section"><h3>개발 모드</h3>
+      <label class="ai-check"><input type="checkbox" id="ai-devlog" ${s.dev_log ? 'checked' : ''}>개발 모드 기록(원문을 이 PC에 저장)</label>
+      <p class="muted small">켜면 AI에 보낸 글(가린 뒤)과 받은 답을 문서 폴더의 SoneFM/platform/ai-dev 폴더에 파일로 남깁니다. 평소에는 꺼 두세요.</p></div>
     <div class="ai-section"><h3>이번 달 사용량</h3>${aiUsageHtml(s)}</div>`, async (dlg) => {
     const price = {}
     dlg.querySelectorAll('[data-price]').forEach((i) => { (price[i.dataset.price] ??= {})[i.dataset.k] = i.value })
@@ -262,11 +265,20 @@ async function aiDialog() {
       prices: price,
       limits: { daily_usd: $('#f-ai-daily').value, monthly_usd: $('#f-ai-monthly').value },
       masking: { enabled: $('#ai-mask').checked, names: $('#f-ai-names').value },
+      dev_log: $('#ai-devlog').checked,
     })
     if (!r.ok) return r.errors[0]
     toast(r.message)
   })
   $('#dlg-ok').textContent = '설정 저장'
+  const keyBox = $('#ai-key')
+  // 어떤 방법으로 닫든(확인·닫기·Esc) 키 입력칸을 비운다
+  $('#dlg').addEventListener('close', () => { keyBox.value = '' }, { once: true })
+  keyBox.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    aiAction('save')
+  })
 }
 
 async function aiAction(kind) {

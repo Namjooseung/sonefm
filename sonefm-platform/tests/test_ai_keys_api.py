@@ -85,9 +85,20 @@ def test_ai_test는_off이고_예외없음():
     a = Api()
     r = a.ai_test()
     assert r["ok"] is False and r["kind"] == "off"
+    from hub.ai import gateway
+    from hub.ai.providers import FakeProvider
     keys.save_key(KEY)
-    r = a.ai_test()
-    assert r["ok"] is False and r["kind"] == "off" and "준비되지 않았습니다" in r["errors"][0] and KEY not in json.dumps(r)
+    cfg = paths.load_config()
+    cfg["ai"]["models"]["light"] = "m-light"
+    cfg["ai"]["prices"]["m-light"] = {"input": 1.0, "output": 1.0, "cache_write": 1.0, "cache_read": 1.0}
+    paths.save_config(cfg)
+    fake = FakeProvider(["네"])
+    gateway._default._provider_factory = lambda k: fake   # 실제 API 대신 (뒤에서 되돌림)
+    try:
+        r = a.ai_test()
+    finally:
+        gateway._default._provider_factory = gateway.ClaudeProvider
+    assert r["ok"] is True and "m-light" in r["message"] and KEY not in json.dumps(r)
 
 
 def test_사용량_합계():
@@ -108,7 +119,6 @@ def test_키_값이_어디에도_없음(tmp_path):
     a.ai_save_settings(full())
     st = a.ai_status()
     assert st["has_key"] is True and KEY not in json.dumps(st) and KEY[-4:] not in json.dumps(st).replace("claude", "")
-    a.ai_test()
     assert a.ai_delete_key()["ok"] and a.ai_status()["has_key"] is False
     for f in (tmp_path / "SoneFM").rglob("*"):
         if f.is_file():

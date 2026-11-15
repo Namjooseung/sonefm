@@ -25,7 +25,7 @@
 | `hub/worklog.py` | 업무일지 받기·읽기(세 가지 시트 모양), 이상 경고 |
 | `hub/schedule_inbox.py` | 편성 폴더의 최신 `.db` → 검사(`check-db`) → 사본 |
 | `hub/db.py` | 실행 기록·업무 표시·직접 입력 업무·키-값 |
-| `hub/ai/` | AI 게이트웨이: `gateway.complete`, 마스킹 `mask`, 스키마 검증 `schema`, 공급자 인터페이스·가짜 `providers`, 키 보관 `keys`(keyring, 1b), 설정 화면용 검증·상태 `settings`(1b). 실제 공급자(Claude)는 1c. 화면은 상단 [AI] 버튼 |
+| `hub/ai/` | AI 게이트웨이: `gateway.complete`(개발 모드 원문 기록 `ai.dev_log`), 마스킹 `mask`, 스키마 검증 `schema`, 공급자 인터페이스·가짜 `providers`, 키 보관 `keys`(keyring, 1b), 설정 화면용 검증·상태 `settings`(1b). 공급자 `claude`(anthropic SDK, 캐시·effort·환경 변수 차단, 1c). 화면은 상단 [AI] 버튼 |
 | `hub/api.py`, `hub/main.py` | 화면 연결, pywebview 창 |
 | `ui/` | 화면(빌드 없음: index.html, app.js, style.css). 색·글꼴은 루트 ../DESIGN.md(모든 앱 공통) 토큰 |
 | `recipes/` | 기본 레시피. 사용자 레시피는 `Documents\SoneFM\platform\recipes\`(같은 id면 우선) |
@@ -38,6 +38,7 @@ py -3.12 -m venv .venv
 .venv\Scripts\python -m hub                 # 실행 (실제 데이터)
 실행.bat                                    # 체험: demo-data\ + tools/demo_setup.py가 견본 준비
 .venv\Scripts\python -m pytest -q           # 테스트 (옆 폴더에 두 앱 개발 환경 + ffmpeg가 있으면 실제 앱 연동 테스트도 돈다)
+.venv\Scripts\python -m pytest -q --real-ai   # 실제 Anthropic API 호출 2회(돈이 든다). keyring에 키가 있을 때만. 기본은 건너뜀
 .venv\Scripts\python -m PyInstaller packaging/platform.spec --noconfirm   # → dist\SoneFMPlatform\
 ISCC packaging\installer.iss               # Inno Setup 6 → packaging\Output\ (UTF-8 BOM 유지)
 ```

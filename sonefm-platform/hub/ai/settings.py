@@ -9,6 +9,7 @@ from hub import db
 from hub.ai import keys
 from hub.paths import load_config, save_config
 
+EFFORTS = ("low", "medium", "high")
 PRICE_KEYS = ("input", "output", "cache_write", "cache_read")
 _PRICE_LABEL = {"input": "입력", "output": "출력", "cache_write": "캐시 쓰기", "cache_read": "캐시 읽기"}
 
@@ -50,7 +51,12 @@ def save(ai: dict[str, Any]) -> None:
     names = masking.get("names") or []
     if isinstance(names, str):
         names = names.splitlines()
-    cfg["ai"] = {**old, "enabled": bool(ai.get("enabled")), "models": models, "prices": prices,
+    effort = {t: str((ai.get("effort") or {}).get(t, old["effort"][t])) for t in ("light", "heavy")}
+    for t, v in effort.items():
+        if v not in EFFORTS:
+            raise ValueError(f"{t} 작업의 생각 깊이(effort)는 {'/'.join(EFFORTS)} 중 하나여야 합니다.")
+    cfg["ai"] = {**old, "enabled": bool(ai.get("enabled")), "models": models, "prices": prices, "effort": effort,
+                 "dev_log": bool(ai.get("dev_log")),
                  "limits": {"daily_usd": _num(lim.get("daily_usd"), "하루 한도"),
                             "monthly_usd": _num(lim.get("monthly_usd"), "한 달 한도")},
                  "masking": {"enabled": bool(masking.get("enabled")),
@@ -67,6 +73,6 @@ def status() -> dict[str, Any]:
     m0, m1 = m0.strftime("%Y-%m-%d"), m1.strftime("%Y-%m-%d")
     return {"has_key": keys.has_key(), "enabled": ai["enabled"], "models": ai["models"],
             "prices": {m: {k: (ai["prices"].get(m) or {}).get(k) for k in PRICE_KEYS} for m in dict.fromkeys(ai["models"].values())},
-            "limits": ai["limits"], "masking": ai["masking"],
+            "limits": ai["limits"], "masking": ai["masking"], "dev_log": ai["dev_log"],
             "usage": {"today_usd": db.ai_cost_sum(d0, d1), "month_usd": db.ai_cost_sum(m0, m1),
                       "month_calls": db.ai_call_count(m0, m1)}}

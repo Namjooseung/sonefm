@@ -1,3 +1,4 @@
 pywebview==5.4
 openpyxl==3.1.5
 keyring==25.7.0
+anthropic==2.8.0

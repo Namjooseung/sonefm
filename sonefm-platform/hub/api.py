@@ -241,7 +241,7 @@ class Api:
         def go() -> dict[str, Any]:
             try:
                 r = gateway.complete("connection_test", "light", [{"role": "user", "content": "연결 확인입니다. 한 단어로 답해 주세요."}],
-                                     max_tokens=16)
+                                     max_tokens=1024)
             except gateway.AIError as e:
                 return {"ok": False, "kind": e.kind, "errors": [e.message]}
             return {"ok": True, "message": f"연결되었습니다. (모델 {r.model})"}

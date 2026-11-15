@@ -62,7 +62,7 @@ def test_키없음과_꺼짐은_off이고_공급자를_안_부름():
         ask(gw(p))
     assert e.value.kind == "off" and not p.calls and not calls()
     from hub.ai import gateway
-    with pytest.raises(AIError) as e:
+    with pytest.raises(AIError) as e:   # 기본 게이트웨이도 키가 없으면 off
         gateway.complete("x", "light", [{"role": "user", "content": "a"}])
     assert e.value.kind == "off"
 
@@ -105,6 +105,10 @@ def test_코드블록과_스키마_부분집합():
 
 
 def test_단가_null이면_budget():
+    cfg = load_config()
+    cfg["ai"]["models"]["light"] = "no-price-model"   # 기본 단가가 있는 모델은 null이어도 기본값을 쓴다
+    cfg["ai"]["prices"]["no-price-model"] = {"input": None, "output": None, "cache_write": None, "cache_read": None}
+    save_config(cfg)
     p = FakeProvider(["a"])
     with pytest.raises(AIError) as e:
         ask(gw(p))
@@ -208,7 +212,7 @@ def test_설정_깊은_병합():
                                          "prices": {"claude-haiku-5-5": {"input": 1.0}}}}), encoding="utf-8")
     ai = load_config()["ai"]
     assert ai["limits"] == {"daily_usd": 2.0, "monthly_usd": 20.0}
-    assert ai["prices"]["claude-haiku-5-5"] == {"input": 1.0, "output": None, "cache_write": None, "cache_read": None}
+    assert ai["prices"]["claude-haiku-5-5"] == {"input": 1.0, "output": 0.5, "cache_write": 0.125, "cache_read": 0.01}
     assert ai["models"]["heavy"] == "claude-sonnet-5-5" and ai["masking"]["enabled"] is True
     assert load_config()["stale_days"] == 5
     saved = save_config({"ai": {"enabled": False}})

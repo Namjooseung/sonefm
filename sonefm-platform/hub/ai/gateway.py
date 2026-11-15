@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -17,8 +18,10 @@ from hub import db
 from hub.ai import schema as S
 from hub.ai.keys import get_key
 from hub.ai.mask import KINDS, mask
-from hub.ai.providers import Provider, ProviderAuthError, ProviderNetworkError, ProviderReply
-from hub.paths import load_config
+from hub.ai.claude import ClaudeProvider
+from hub.ai.providers import (Provider, ProviderAuthError, ProviderError, ProviderFormatError, ProviderNetworkError,
+                              ProviderReply)
+from hub.paths import load_config, platform_dir
 
 log = logging.getLogger("hub.ai")
 
@@ -81,24 +84,44 @@ def _mask_messages(messages: list[dict], names: list[str]) -> tuple[list[dict], 
     return out, total
 
 
+def _dev_log(feature: str, model: str, system: Any, messages: list[dict], reply: ProviderReply) -> None:
+    """ai.dev_log가 켜졌을 때만 (마스킹 후) 원문을 로컬 파일로. 키는 인자로 오지 않는다. 실패해도 호출에 영향 없음."""
+    try:
+        now = datetime.now()
+        d = platform_dir() / "ai-dev" / now.strftime("%Y-%m-%d")
+        d.mkdir(parents=True, exist_ok=True)
+        base = f"{now.strftime('%H%M%S')}_{feature}"
+        p, n = d / f"{base}.json", 1
+        while p.exists():
+            n += 1
+            p = d / f"{base}_{n}.json"
+        usage = {"input_tokens": reply.input_tokens, "output_tokens": reply.output_tokens,
+                 "cache_read_tokens": reply.cache_read_tokens, "cache_write_tokens": reply.cache_write_tokens}
+        p.write_text(json.dumps({"model": model, "system": system, "messages": messages, "text": reply.text,
+                                 "usage": usage}, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as e:  # noqa: BLE001
+        log.warning("AI 개발 모드 기록 실패(%s)", type(e).__name__)
+
+
 def _no_key() -> None:
     return None
 
 
 class Gateway:
     def __init__(self, key_getter: Callable[[], str | None] = _no_key,
-                 provider_factory: Callable[[str], Provider] | None = None):
+                 provider_factory: Callable[[str], Provider] = ClaudeProvider):
         self._key_getter = key_getter
         self._provider_factory = provider_factory
 
+    # 기본 max_tokens: thinking(adaptive) 토큰도 여기에 포함되므로 넉넉히
     def complete(self, feature: str, tier: str, messages: list[dict], system: Any = None, tools: Any = None,
-                 schema: dict | None = None, max_tokens: int = 1024) -> AIResult:
+                 schema: dict | None = None, max_tokens: int = 4096) -> AIResult:
         try:
             return self._complete(feature, tier, messages, system, tools, schema, max_tokens)
         except AIError:
             raise
-        except Exception:
-            log.exception("AI 호출 준비 중 예상 못 한 오류")
+        except Exception as e:  # noqa: BLE001  메시지에 키가 섞일 수 있어 클래스 이름만 남긴다
+            log.error("AI 호출 준비 중 예상 못 한 오류(%s)", type(e).__name__)
             raise AIError("internal") from None
 
     def _complete(self, feature, tier, messages, system, tools, schema, max_tokens) -> AIResult:
@@ -106,8 +129,6 @@ class Gateway:
         key = self._key_getter()
         if not cfg["enabled"] or not key:
             raise AIError("off")
-        if self._provider_factory is None:
-            raise AIError("off", "AI 연결 기능이 아직 준비되지 않았습니다. 다음 업데이트 뒤에 쓸 수 있습니다.")
         model = cfg["models"][tier]    # 모르는 등급은 KeyError → internal (코드 실수)
         price = cfg["prices"].get(model) or {}
         if any(price.get(k) is None for k in ("input", "output", "cache_write", "cache_read")):
@@ -125,13 +146,15 @@ class Gateway:
         error_kind = None
         try:
             provider = self._provider_factory(key)
-            text, data = self._call(provider, model, system, list(messages), tools, max_tokens, schema, usage, state)
+            text, data = self._call(provider, model, system, list(messages), tools, max_tokens, schema, usage, state,
+                                    effort=(cfg.get("effort") or {}).get(tier),
+                                    dev=(feature, model) if cfg.get("dev_log") else None)
         except AIError as e:
             error_kind = e.kind
             raise
-        except Exception:
+        except Exception as e:  # noqa: BLE001
             error_kind = "internal"
-            log.exception("AI 호출 중 예상 못 한 오류")
+            log.error("AI 호출 중 예상 못 한 오류(%s)", type(e).__name__)
             raise AIError("internal") from None
         finally:
             ms = int((time.monotonic() - started) * 1000)
@@ -145,14 +168,20 @@ class Gateway:
                 log.exception("AI 호출 기록 실패")
         return AIResult(text, data, model, *usage, cost, ms, masked)
 
-    def _call(self, provider, model, system, messages, tools, max_tokens, schema, usage, state):
+    def _call(self, provider, model, system, messages, tools, max_tokens, schema, usage, state, effort=None, dev=None):
         def ask(msgs) -> ProviderReply:
             try:
-                r = provider.complete(model, system, msgs, tools, max_tokens)
+                r = provider.complete(model, system, msgs, tools, max_tokens, effort=effort)
             except ProviderAuthError:
                 raise AIError("auth") from None
-            except ProviderNetworkError:
-                raise AIError("network") from None
+            except ProviderNetworkError as e:
+                raise AIError("network", str(e) or None) from None
+            except ProviderFormatError as e:
+                raise AIError("format", str(e) or None) from None
+            except ProviderError:
+                raise AIError("internal") from None   # 공급자가 이미 상태 코드만 로그에 남겼다
+            if dev:
+                _dev_log(dev[0], dev[1], system, msgs, r)
             for i, v in enumerate((r.input_tokens, r.output_tokens, r.cache_read_tokens, r.cache_write_tokens)):
                 usage[i] += v
             return r
@@ -196,9 +225,9 @@ class Gateway:
                                         f"썼고 {release}. 급하면 설정에서 한도를 올려 주세요.")
 
 
-_default = Gateway(key_getter=get_key)   # 공급자 factory는 1c. 지금은 키가 있어도 off
+_default = Gateway(key_getter=get_key, provider_factory=ClaudeProvider)
 
 
 def complete(feature: str, tier: str, messages: list[dict], system: Any = None, tools: Any = None,
-             schema: dict | None = None, max_tokens: int = 1024) -> AIResult:
+             schema: dict | None = None, max_tokens: int = 4096) -> AIResult:
     return _default.complete(feature, tier, messages, system, tools, schema, max_tokens)

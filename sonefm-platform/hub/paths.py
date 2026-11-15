@@ -20,8 +20,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "ai": {                    # AI_DESIGN.md 4.3. 단가 null = 모름 → 그 모델 호출은 막힌다. 키는 여기 두지 않는다
         "enabled": True,
         "models": {"light": "claude-haiku-5-5", "heavy": "claude-sonnet-5-5"},
-        "prices": {m: {"input": None, "output": None, "cache_write": None, "cache_read": None}
-                   for m in ("claude-haiku-5-5", "claude-sonnet-5-5")},   # USD/백만 토큰
+        # USD/백만 토큰. Anthropic 공식 가격, 2026-11 확인. 바뀌면 설정 화면에서 수정
+        # shortcut: haiku는 10만 토큰 이하 요청 기준 단가(넘으면 더 비쌈), 긴 입력 기능을 붙일 때 단가 구조를 늘린다
+        "prices": {
+            "claude-haiku-5-5": {"input": 0.10, "output": 0.50, "cache_write": 0.125, "cache_read": 0.01},
+            "claude-sonnet-5-5": {"input": 2.00, "output": 10.00, "cache_write": 2.50, "cache_read": 0.10},
+        },
+        "effort": {"light": "low", "heavy": "medium"},   # low|medium|high, 등급별 output_config.effort
         "limits": {"daily_usd": 1.0, "monthly_usd": 20.0},
         "masking": {"enabled": True, "names": []},
         "dev_log": False,
@@ -37,6 +42,15 @@ def _merge(base: Any, over: Any) -> Any:
     for k, v in over.items():
         out[k] = _merge(base[k], v) if k in base else copy.deepcopy(v)
     return out
+
+
+def _fill_null_prices(ai: dict[str, Any]) -> dict[str, Any]:
+    """저장된 단가가 null이면 기본값을 쓴다(숫자를 넣은 값이 우선). 한도는 null이 '무제한'이라 건드리지 않는다."""
+    for m, row in ai["prices"].items():
+        for k, v in row.items():
+            if v is None:
+                ai["prices"][m][k] = (DEFAULT_CONFIG["ai"]["prices"].get(m) or {}).get(k)
+    return ai
 
 
 def home() -> Path:
@@ -77,7 +91,7 @@ def load_config() -> dict[str, Any]:
             raw = json.loads(p.read_text(encoding="utf-8"))
             cfg.update({k: v for k, v in raw.items() if k in DEFAULT_CONFIG and k != "ai"})
             if isinstance(raw.get("ai"), dict):
-                cfg["ai"] = _merge(DEFAULT_CONFIG["ai"], raw["ai"])
+                cfg["ai"] = _fill_null_prices(_merge(DEFAULT_CONFIG["ai"], raw["ai"]))
         except (OSError, ValueError):
             pass   # 깨진 설정이면 기본값으로 연다 (화면 설정에서 다시 저장)
     return cfg

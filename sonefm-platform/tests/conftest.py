@@ -37,9 +37,25 @@ class MemoryKeyring(KeyringBackend):
         del self.data[(service, username)]
 
 
+def pytest_addoption(parser):
+    parser.addoption("--real-ai", action="store_true", default=False, help="실제 Anthropic API 테스트(키는 자격 증명 관리자에서)")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--real-ai"):
+        return
+    skip = pytest.mark.skip(reason="--real-ai 를 줄 때만 실행")
+    for item in items:
+        if "real_ai" in item.keywords:
+            item.add_marker(skip)
+
+
 @pytest.fixture(autouse=True)
-def memory_keyring():
-    """실제 Windows 자격 증명 관리자를 건드리지 않는다."""
+def memory_keyring(request):
+    """실제 Windows 자격 증명 관리자를 건드리지 않는다. real_ai 테스트만 예외(읽기만 한다)."""
+    if request.node.get_closest_marker("real_ai"):
+        yield None
+        return
     original = keyring.get_keyring()
     mem = MemoryKeyring()
     keyring.set_keyring(mem)
