@@ -34,7 +34,9 @@ def receive(cfg: dict[str, Any], apps: dict[str, App], run: Callable[..., dict[s
     """→ {path, label, received_at, warning}. path가 빈 값이면 레시피가 편성표 앱의 이 PC 데이터를 쓴다."""
     inbox = cfg.get("schedule_inbox") or ""
     if not inbox:
-        return {"path": "", "label": "이 PC의 편성표 데이터", "received_at": None, "warning": None}
+        # 편성은 항상 편성 직원 PC에서 짠다(2026-11-15 결정). 이 PC의 편성표 앱은 비어 있으니 경고한다
+        return {"path": "", "label": "편성 폴더 미설정", "received_at": None,
+                "warning": "편성 폴더가 설정되지 않았습니다. [설정]에서 편성 담당이 '데이터 내보내기'로 저장하는 드라이브 폴더를 지정하세요."}
     info = db.get_meta("schedule_snapshot")
     folder = Path(inbox)
     if not folder.is_dir():

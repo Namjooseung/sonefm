@@ -107,5 +107,6 @@ def test_편성_파일_받기_검사_통과와_실패(api):
     assert Path(s["path"]).read_bytes() == b"x" * 10     # 실패하면 이전 사본 유지
 
 
-def test_편성_폴더가_없으면_이_PC_데이터():
-    assert schedule_inbox.receive({"schedule_inbox": ""}, {})["path"] == ""
+def test_편성_폴더가_없으면_경고():
+    r = schedule_inbox.receive({"schedule_inbox": ""}, {})
+    assert r["path"] == "" and "편성 폴더가 설정되지 않았습니다" in r["warning"]
