@@ -31,7 +31,7 @@ def _current(info: dict[str, Any] | None, warning: str | None = None) -> dict[st
 
 
 def receive(cfg: dict[str, Any], apps: dict[str, App], run: Callable[..., dict[str, Any]] = run_command) -> dict[str, Any]:
-    """→ {path, label, received_at, warning}. path가 빈 값이면 레시피가 편성표 앱의 이 PC 데이터를 쓴다."""
+    """→ {path, label, received_at, warning}. 받은 사본이 없으면 path는 빈 값이고 warning에 이유가 있다."""
     inbox = cfg.get("schedule_inbox") or ""
     if not inbox:
         # 편성은 항상 편성 직원 PC에서 짠다(2026-11-15 결정). 이 PC의 편성표 앱은 비어 있으니 경고한다
