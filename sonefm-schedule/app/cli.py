@@ -120,11 +120,18 @@ def _emit(result: dict[str, Any], result_path: str | None) -> None:
     if result_path:
         Path(result_path).write_text(line, encoding="utf-8")
     if sys.stdout is not None:   # 콘솔 없는 exe에서는 표준출력이 없다 → 결과 파일이 기준
-        sys.stdout.write(line + "\n")
-        sys.stdout.flush()
+        try:
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+        except (OSError, ValueError):
+            pass   # 화면용 exe에서 처리 안 된 예외는 오류 창을 띄우고 멈춘다 → 출력 실패도 삼킨다
 
 
 def main(argv: list[str] | None = None) -> int:
+    # 설치판 exe는 PYTHONIOENCODING을 무시하고 cp949로 연다 → 결과 JSON(UTF-8) 출력 전에 맞춘다
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     p = argparse.ArgumentParser(prog="SoneFM --cli", description="SoneFM 편성표 명령줄")
     p.add_argument("command", choices=sorted(COMMANDS))
     p.add_argument("--input", help="입력 JSON 파일")
