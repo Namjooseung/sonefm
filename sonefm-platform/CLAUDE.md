@@ -49,8 +49,7 @@ ISCC packaging\installer.iss               # Inno Setup 6 → packaging\Output\ 
 ## 남은 일
 
 - 실제 업무일지 시트 확인(PLATFORM_DESIGN.md 2절 "실제 시트에서 확인할 것" 4가지) → 쓰지 않는 시트 모양 처리는 지운다.
-- 이 PC에 Inno Setup이 없어 설치 파일은 아직 안 만들었다. exe(PyInstaller)는 빌드·실행 확인함.
-- radio2yt 설치판 exe로 `make-video` 확인(개발 환경으로는 확인함).
+- 방송국 PC(개발 도구 없음)에서 설치 확인. 개발 PC에서는 2026-11-15에 세 설치 파일로 설치 → 자동 탐색 → 설치판 exe로 유튜브 레시피 끝까지 → 제거까지 확인함. 설치 파일은 상위 `../배포/`.
 
 ## 인수인계 문서
 
