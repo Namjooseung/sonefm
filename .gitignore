@@ -1,0 +1,6 @@
+# 이 저장소는 플랫폼 공통 문서만 관리한다.
+# 앱 폴더(radio2yt, sonefm-schedule, sonefm-platform, 이후 추가 앱)는 각자 저장소라 넣지 않는다.
+/*
+!/.gitignore
+!/*.md
+!/docs/
