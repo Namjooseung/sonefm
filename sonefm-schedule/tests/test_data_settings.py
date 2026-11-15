@@ -117,6 +117,14 @@ def test_운영_설정_저장(tmp_path):
     assert r["ok"] and r["offweek_policy_default"] == "empty" and len(r["fixed_programs"]) == 3
     assert not api.settings_save({"offweek_policy_default": "x",
                                   "fixed_program_ids": ["없음"]})["ok"]
+    # 대중음악 목록: 보내면 바뀌고, 안 보내면 그대로
+    r = api.settings_save({"offweek_policy_default": "rerun", "fixed_program_ids": [p["id"] for p in r["fixed_programs"]],
+                           "music_program_ids": [pid]})
+    assert r["ok"] and [p["id"] for p in r["music_programs"]] == [pid]
+    r = api.settings_save({"offweek_policy_default": "rerun", "fixed_program_ids": [p["id"] for p in r["fixed_programs"]]})
+    assert [p["id"] for p in r["music_programs"]] == [pid]
+    assert not api.settings_save({"offweek_policy_default": "rerun", "fixed_program_ids": [],
+                                  "music_program_ids": ["없음"]})["ok"]
 
 
 def test_임시공휴일(tmp_path):

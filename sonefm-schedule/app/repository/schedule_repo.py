@@ -97,10 +97,11 @@ def slot_rules(conn: sqlite3.Connection) -> list[SlotRule]:
 
 
 def program_display(conn: sqlite3.Connection) -> dict[str, dict[str, Any]]:
-    """화면 표시용 프로그램 정보 (이름·분야·특집 여부)."""
+    """화면 표시용 프로그램 정보 (이름·분야·특집 여부·제작 주체)."""
     return {r["id"]: {"name": r["name"], "category": r["category"], "is_special": bool(r["is_special"]),
-                      "cycle_type": r["cycle_type"], "show_episode": bool(r["show_episode"])}
-            for r in conn.execute("SELECT id, name, category, is_special, cycle_type, show_episode FROM programs")}
+                      "cycle_type": r["cycle_type"], "show_episode": bool(r["show_episode"]),
+                      "producer_type": r["producer_type"]}
+            for r in conn.execute("SELECT id, name, category, is_special, cycle_type, show_episode, producer_type FROM programs")}
 
 
 # ── 월 상태 ───────────────────────────────────────

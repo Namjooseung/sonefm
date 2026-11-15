@@ -16,11 +16,13 @@ def _fail(*msgs: str) -> Result:
 
 def get_rules(conn: sqlite3.Connection) -> Result:
     fixed_ids = settings_repo.get(conn, "fixed_program_ids", [])
+    music_ids = settings_repo.get(conn, "music_program_ids", [])
     names = {pid: n for pid, n, _ in programs_repo.name_index(conn)}
     return {
         "ok": True,
         "offweek_policy_default": settings_repo.get(conn, "offweek_policy_default", "rerun"),
         "fixed_programs": [{"id": pid, "name": names.get(pid, "(삭제된 프로그램)")} for pid in fixed_ids],
+        "music_programs": [{"id": pid, "name": names.get(pid, "(삭제된 프로그램)")} for pid in music_ids],
         "holidays": schedule_repo.list_manual_holidays(conn),
     }
 
@@ -36,15 +38,21 @@ def save_rules(conn: sqlite3.Connection, payload: dict[str, Any]) -> Result:
         errors.append("고정 편성 목록에 없는 프로그램이 있습니다. 다시 골라 주세요.")
     if len(set(fixed)) != len(fixed):
         errors.append("고정 편성 목록에 같은 프로그램이 두 번 있습니다.")
+    # 대중음악 목록은 보내지 않으면 그대로 둔다
+    music = None if payload.get("music_program_ids") is None else [str(x) for x in payload["music_program_ids"]]
+    if music is not None and (any(pid not in names for pid in music) or len(set(music)) != len(music)):
+        errors.append("대중음악 프로그램 목록을 다시 골라 주세요.")
     if errors:
         return _fail(*errors)
     before = get_rules(conn)
     settings_repo.set_value(conn, "offweek_policy_default", offweek)
     settings_repo.set_value(conn, "fixed_program_ids", fixed)
+    if music is not None:
+        settings_repo.set_value(conn, "music_program_ids", music)
     change_log_repo.add(conn, "settings", None, "운영 설정 변경",
                         {"offweek_policy_default": before["offweek_policy_default"]},
                         {"offweek_policy_default": offweek,
-                         "fixed_program_ids": fixed}, "운영 설정 변경")
+                         "fixed_program_ids": fixed, "music_program_ids": music}, "운영 설정 변경")
     return {**get_rules(conn), "message": "설정을 저장했습니다."}
 
 

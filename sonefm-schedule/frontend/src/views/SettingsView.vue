@@ -26,7 +26,7 @@ async function loadAll() {
   const [p, d, r, l] = await Promise.all([api.ping(), api.dataInfo(), api.settingsGet(), api.listPrograms('', true)])
   info.value = p
   if (d.ok) data.value = d
-  if (r.ok) rules.value = { ...r, fixed_program_ids: r.fixed_programs.map((x) => x.id) }
+  if (r.ok) rules.value = { ...r, fixed_program_ids: r.fixed_programs.map((x) => x.id), music_program_ids: r.music_programs.map((x) => x.id) }
   if (l.ok) programs.value = l.items
 }
 
@@ -48,10 +48,16 @@ function pushFixed() {
   if (addFixed.value && !rules.value.fixed_program_ids.includes(addFixed.value)) rules.value.fixed_program_ids.push(addFixed.value)
   addFixed.value = ''
 }
+const nameOf = (id) => programs.value.find((p) => p.id === id)?.name || '(삭제된 프로그램)'
+const addMusic = ref('')
+function pushMusic() {
+  if (addMusic.value && !rules.value.music_program_ids.includes(addMusic.value)) rules.value.music_program_ids.push(addMusic.value)
+  addMusic.value = ''
+}
 function saveRules() {
   const r = rules.value
   act(api.settingsSave({ offweek_policy_default: r.offweek_policy_default,
-    fixed_program_ids: r.fixed_program_ids }))
+    fixed_program_ids: r.fixed_program_ids, music_program_ids: r.music_program_ids }))
 }
 
 // ── 임시공휴일 ──
@@ -128,6 +134,21 @@ onActivated(loadAll)
           <select v-model="addFixed" class="select select-sm" @change="pushFixed">
             <option value="">프로그램 추가…</option>
             <option v-for="p in programs.filter((x) => !rules.fixed_program_ids.includes(x.id))" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <span>대중음악 프로그램 (방송실시결과 보고서의 대중음악. 나머지는 청취자참여로 셉니다. 보고서 표에 이 순서로 나옵니다)</span>
+        <div class="chips">
+          <span v-for="(id, i) in rules.music_program_ids" :key="id" class="chip">
+            {{ nameOf(id) }}
+            <button class="chip-x" :aria-label="`${nameOf(id)} 빼기`" @click="rules.music_program_ids.splice(i, 1)">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" /></svg>
+            </button>
+          </span>
+          <select v-model="addMusic" class="select select-sm" @change="pushMusic">
+            <option value="">프로그램 추가…</option>
+            <option v-for="p in programs.filter((x) => !rules.music_program_ids.includes(x.id))" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
         </div>
       </div>

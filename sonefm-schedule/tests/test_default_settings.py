@@ -19,6 +19,7 @@ def test_기본_설정값(tmp_path):
     assert s["offweek_policy_default"] == "rerun"
     assert "irregular_missing_warn_count" not in s     # 0004에서 삭제
     assert len(s["fixed_program_ids"]) == 2
+    assert s["music_program_ids"] == s["fixed_program_ids"]     # 0006: 새 DB엔 굿모닝·굿바이만 (음악 프로그램 없음)
 
 
 def test_고정편성_프로그램과_매일_자리(tmp_path):

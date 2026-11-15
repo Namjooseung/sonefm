@@ -20,7 +20,7 @@
 - 모든 테이블 행은 UUID `id`, `created_at`, `updated_at`을 가진다.
 - DB 파일은 exe 내부에 두지 않는다. 기본 경로 `%USERPROFILE%\Documents\SoneFM\data\schedule.db`.
 - SQLite 저널 모드는 기본값(DELETE) 유지. WAL 사용 금지.
-- 이후 범위(보고서·유튜브·동기화)는 요청 전까지 구현하지 않는다. 방송일지는 구현됨(PLAN.md 10장).
+- 이후 범위(유튜브·동기화)는 요청 전까지 구현하지 않는다. 방송일지·방송실시결과 보고서는 구현됨(PLAN.md 10장).
 
 ## 명령어
 - 가상환경: `py -3.12 -m venv .venv` → `.venv\Scripts\activate`

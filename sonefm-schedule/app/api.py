@@ -23,6 +23,7 @@ from app.services import cell_edit, month_status
 from app.services import data as data_service
 from app.services import excel as excel_service
 from app.services import journal as journal_service
+from app.services import report as report_service
 from app.services import settings as settings_service
 from app.services import programs as program_service
 from app.services import schedule as schedule_service
@@ -215,6 +216,23 @@ class Api:
         if not path.lower().endswith(".xlsx"):
             path += ".xlsx"
         return self._run("journal_export", lambda c: journal_service.export_journal(c, int(year), int(month), path))
+
+    def report_export(self, year: int, month: int) -> dict[str, Any]:
+        """그 달 방송실시결과 보고서를 hwpx로 저장 (저장 창). 한글이 있으면 같은 이름 hwp도."""
+        import webview
+        win = self._window()
+        if win is None:
+            return {"ok": False, "errors": ["저장 창을 열 수 없습니다."]}
+        name = f"별지 13 방송실시결과지상파방송사업자방송법 시행에 관한 방송통신위원회규칙_팔달FM_{int(month)}월전체.hwpx"
+        docs = Path(self._cfg.db_path).parent.parent
+        picked = win.create_file_dialog(webview.SAVE_DIALOG, directory=str(docs), save_filename=name,
+                                        file_types=("한글 문서 (*.hwpx)",))
+        if not picked:
+            return {"ok": True, "cancelled": True}
+        path = picked if isinstance(picked, str) else picked[0]
+        if not path.lower().endswith(".hwpx"):
+            path += ".hwpx"
+        return self._run("report_export", lambda c: report_service.export_report(c, int(year), int(month), path))
 
     # ── 설정: 운영 기준값·임시공휴일 ──────────────
     def settings_get(self) -> dict[str, Any]:
