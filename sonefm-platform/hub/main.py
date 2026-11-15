@@ -37,7 +37,7 @@ def main() -> int:
     from hub.api import Api
 
     api = Api()
-    window = webview.create_window(APP_NAME, index.as_uri(), js_api=api, width=1280, height=860, min_size=(960, 640))
+    window = webview.create_window(APP_NAME, index.as_uri(), js_api=api, width=1280, height=860, min_size=(960, 640), maximized=True)
     api._window = window  # noqa: SLF001
     log.info("시작: 데이터 %s", platform_dir())
 
