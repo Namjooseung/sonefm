@@ -9,6 +9,7 @@
 - **앱별 코드를 플랫폼에 넣지 않는다.** 앱은 매니페스트(`sonefm-app.json`)와 레시피(`recipes/*.json`)로만 다룬다. `hub/registry.py`, `hub/runner.py`, `hub/recipes.py`에 특정 앱 id가 나오면 잘못이다. (예외: `hub/schedule_inbox.py`는 편성 파일 받기라서 `sonefm-schedule`의 `check-db` 명령을 부른다.)
 - **앱의 DB·파일을 직접 읽지 않는다.** 필요한 값은 앱 명령의 결과(`data`)로 받는다.
 - **구글 API·서비스 계정·OAuth·개인 키 금지.** 업무일지는 드라이브 데스크톱 앱 폴더의 `.gsheet` → 공유 링크 xlsx 내려받기, 편성은 드라이브 폴더의 `.db` 파일. 서버 없음.
+  - 예외(AI 기능): **방송국이 소유한** Anthropic API 키만, 설정 화면 → keyring(Windows 자격 증명 관리자). 설정 파일·환경 변수(`ANTHROPIC_API_KEY` 포함)·저장소·로그·설치 기본값에 키를 두지 않는다. 개발·데모 키도 설정 화면으로만 넣고 떠나기 전 체크리스트(`../docs/인수인계_떠나기_전_체크리스트.md`)에서 삭제한다. LLM 호출은 `hub/ai/` 게이트웨이로만. 설계는 [../AI_DESIGN.md](../AI_DESIGN.md).
 - 처리 상태는 플랫폼 DB(`Documents\SoneFM\platform\platform.db`)에. 받은 편성 사본에 쓰지 않는다.
 - 사용자에게 보이는 문구는 한국어 존댓말, 오류는 "무엇을 하면 되는지"까지.
 - `Api`(hub/api.py)에 **공개 속성을 두지 않는다.** pywebview가 js_api의 공개 속성을 모두 훑다가 창 객체 같은 것에서 죽는다(실제로 겪음). 내부 값은 `_`로 시작.
