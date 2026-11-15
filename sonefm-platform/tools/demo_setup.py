@@ -1,13 +1,16 @@
 """체험용 데이터 준비 (실행.bat이 부른다). 실제 문서\\SoneFM 대신 SONEFM_HOME(demo-data) 폴더를 쓴다.
 
 - 설정: 옆 폴더의 개발 앱(sonefm-schedule, radio2yt), 체험용 편성 폴더·업무일지 폴더 (이미 있으면 그대로 둔다)
-- 편성 폴더: 편성표 씨앗 DB를 '편성 담당이 내보낸 파일'처럼 넣는다
-- 업무일지 폴더: 오늘 날짜의 견본 업무일지(CSV). 유튜브 업무는 견본 편성에서 오늘 이전 마지막 본방으로 만든다
+- 편성 폴더: 이 PC의 편성표 데이터를 매번 사본으로 넣는다(없으면 씨앗 DB). 원본은 읽기만 한다
+- 업무일지 폴더: 오늘 날짜의 견본 업무일지(CSV). 유튜브 업무는 편성에서 오늘(없으면 그 전) 마지막 본방으로 만든다
 - 견본 송출 mp3(ffmpeg가 있으면), 썸네일은 유튜브 편집기 기본 썸네일을 미리 채워 둔다
 """
 from __future__ import annotations
 
 import csv
+import json
+import os
+import sqlite3
 import shutil
 import subprocess
 import sys
@@ -32,7 +35,12 @@ def main() -> None:
     if not paths.config_path().exists():
         paths.save_config({**paths.load_config(), "app_dirs": [str(SCHEDULE), str(RADIO)],
                            "worklog_folder": str(worklog), "schedule_inbox": str(inbox)})
-    if not any(inbox.glob("*.db")):
+    real = _local_schedule_db()
+    if real:
+        for old in inbox.glob("*.db"):
+            old.unlink()
+        _snapshot(real, inbox / "편성_이PC.db")
+    elif not any(inbox.glob("*.db")):
         shutil.copy(SCHEDULE / "seed" / "schedule_seed.db", inbox / "편성_견본.db")
 
     today = date.today()
@@ -51,14 +59,36 @@ def main() -> None:
         db.set_meta("remember:youtube-video", {"thumb": str(thumb)})
 
     print(f"체험용 데이터: {home}")
+    print(f"편성: {'이 PC의 편성표 데이터 사본 (' + str(real) + ')' if real else '견본 편성 (이 PC에 편성표 데이터 없음)'}")
     print(f"오늘 업무일지: {youtube} / 협찬사 전화 / 방송일지 정리")
     if slot and slot[0] != today:
-        print(f"※ 견본 편성은 {slot[0]}까지만 있습니다. [실행] 창에서 방송 날짜를 {slot[0]}(으)로 바꾸세요.")
+        print(f"※ 편성 데이터에 오늘 편성이 없어 {slot[0]} 방송으로 만들었습니다. [실행] 창에서 방송 날짜를 {slot[0]}(으)로 바꾸세요.")
     print(f"견본 송출 mp3: {mp3 if mp3.exists() else '(ffmpeg가 없어 못 만듦 - 아무 mp3나 고르세요)'}")
 
 
+def _local_schedule_db() -> Path | None:
+    """이 PC 편성표 앱의 데이터 파일. 체험판은 SONEFM_HOME이 demo-data라서 실제 위치를 직접 찾는다."""
+    root = Path(os.environ.get("USERPROFILE", Path.home())) / "Documents" / "SoneFM"
+    try:
+        db_path = Path(json.loads((root / "config.json").read_text(encoding="utf-8"))["db_path"])
+    except (OSError, ValueError, KeyError):
+        db_path = root / "data" / "schedule.db"
+    return db_path if db_path.is_file() else None
+
+
+def _snapshot(src: Path, dest: Path) -> None:
+    """편성표 앱이 켜져 있어도 깨지지 않게 SQLite backup으로 읽기 전용 복사."""
+    s = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
+    d = sqlite3.connect(dest)
+    try:
+        s.backup(d)
+    finally:
+        d.close()
+        s.close()
+
+
 def _last_slot(inbox: Path, today: date) -> tuple[date, int, str] | None:
-    """견본 편성에서 오늘 또는 그 전 마지막 본방(날짜, 시각, 이름). 편성표 앱 명령줄로 묻는다."""
+    """편성에서 오늘 또는 그 전 마지막 본방(날짜, 시각, 이름). 편성표 앱 명령줄로 묻는다."""
     from hub import schedule_inbox
     snap = schedule_inbox.receive(paths.load_config(), registry.discover([str(SCHEDULE)], []))["path"]
     app = registry.load_app(SCHEDULE)
