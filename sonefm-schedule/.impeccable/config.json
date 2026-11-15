@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/components/WeekRow.vue"
+        ],
+        "createdAt": "2026-11-13T14:39:37.712Z",
+        "reason": "existing project design: tokens.css documents the 3px left bar as the category (교양/오락/특집/고정) indicator on schedule cells; predates this session"
+      }
+    ]
+  }
+}

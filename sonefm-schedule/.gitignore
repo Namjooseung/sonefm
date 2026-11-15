@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# 패키징 산출물
+build/
+dist/
+packaging/Output/
+
+# 로컬 DB·로그 (실제 데이터는 Documents\SoneFM 에 있음)
+*.db
+# 새 PC용 기본 데이터는 예외로 저장소에 둔다 (app/startup.py 참고)
+!seed/schedule_seed.db
+*.log
+
+# 편집기
+.vscode/
+.idea/
+
+# 엑셀 임시 파일
+~$*.xlsx
+
+# 아이콘 미리보기 (make_icon.py가 만듦)
+packaging/icon_preview.png
+
+# 시청자미디어재단 제출 자료 (동영상·신청서 등, 저장소에 넣지 않음)
+시청자미디어재단/
+
+# 디자인 점검 플러그인(impeccable) 세션 캐시. config.json(디자인 예외 결정)은 추적한다
+.impeccable/hook.cache.json
