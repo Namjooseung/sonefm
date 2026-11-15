@@ -75,7 +75,7 @@ function askEnd() { confirming.value = 'end'; endDate.value = props.today }
           <label class="field">
             <span>제작 주체</span>
             <select v-model="draft.producer_type" class="select">
-              <option v-for="p in choices.producer_types" :key="p" :value="p">{{ p === '타공동체라디오' ? '타 공동체라디오' : p }}</option>
+              <option v-for="p in choices.producer_types" :key="p" :value="p">{{ p }}</option>
             </select>
           </label>
           <label class="field">

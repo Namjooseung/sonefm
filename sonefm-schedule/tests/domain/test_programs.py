@@ -152,3 +152,8 @@ def test_종영하면_열린_자리를_종영일로_닫음():
 def test_종영일_뒤에_시작하는_자리가_있으면_오류():
     _, errors = plan_end_program("2026-11-30", [_slot(valid_from="2026-12-07")])
     assert errors
+
+
+def test_제작주체는_자체_외부_둘():
+    assert clean_program(_base(producer_type="외부"))[0]["producer_type"] == "외부"
+    assert "제작 주체를 선택해 주세요." in clean_program(_base(producer_type="타공동체라디오"))[1]

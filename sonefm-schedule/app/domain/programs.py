@@ -13,7 +13,7 @@ from datetime import date
 from typing import Any
 
 CATEGORIES: tuple[str, ...] = ("교양", "오락")
-PRODUCER_TYPES: tuple[str, ...] = ("자체", "타공동체라디오", "외부")
+PRODUCER_TYPES: tuple[str, ...] = ("자체", "외부")   # 외부 = 다른 방송사업자 제작 (보고서 제작주체)
 CYCLE_TYPES: dict[str, str] = {
     "weekly": "매주",
     "biweekly": "격주",

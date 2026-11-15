@@ -67,3 +67,16 @@ def test_번호가_비면_거부(tmp_path):
     (folder / "0003_c.sql").write_text("", encoding="utf-8")
     with pytest.raises(RuntimeError):
         discover(folder)
+
+
+def test_0005_타공동체라디오는_외부로(tmp_path):
+    old = tmp_path / "old"
+    old.mkdir()
+    for f in sorted(migrations_dir().glob("000[1-4]_*.sql")):
+        (old / f.name).write_bytes(f.read_bytes())
+    conn = connect(tmp_path / "s.db")
+    apply_migrations(conn, old)
+    conn.execute("INSERT INTO programs (id, name, category, producer_type, cycle_type, created_at, updated_at) "
+                 "VALUES ('p1', '안테나', '교양', '타공동체라디오', 'weekly', 'x', 'x')")
+    apply_migrations(conn, migrations_dir())
+    assert conn.execute("SELECT producer_type FROM programs WHERE id='p1'").fetchone()[0] == "외부"
