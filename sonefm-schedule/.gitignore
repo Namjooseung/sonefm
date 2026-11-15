@@ -31,3 +31,6 @@ packaging/icon_preview.png
 
 # 시청자미디어재단 제출 자료 (동영상·신청서 등, 저장소에 넣지 않음)
 시청자미디어재단/
+
+# 디자인 점검 플러그인(impeccable) 세션 캐시. config.json(디자인 예외 결정)은 추적한다
+.impeccable/hook.cache.json
