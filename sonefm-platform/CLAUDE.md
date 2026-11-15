@@ -25,7 +25,7 @@
 | `hub/schedule_inbox.py` | 편성 폴더의 최신 `.db` → 검사(`check-db`) → 사본 |
 | `hub/db.py` | 실행 기록·업무 표시·직접 입력 업무·키-값 |
 | `hub/api.py`, `hub/main.py` | 화면 연결, pywebview 창 |
-| `ui/` | 화면(빌드 없음: index.html, app.js, style.css). 색·글꼴은 편성표 DESIGN.md 토큰 |
+| `ui/` | 화면(빌드 없음: index.html, app.js, style.css). 색·글꼴은 루트 ../DESIGN.md(모든 앱 공통) 토큰 |
 | `recipes/` | 기본 레시피. 사용자 레시피는 `Documents\SoneFM\platform\recipes\`(같은 id면 우선) |
 
 ## 명령어

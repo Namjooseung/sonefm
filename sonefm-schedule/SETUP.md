@@ -38,7 +38,7 @@ cd C:\dev\sonefm-scheduler
 git init
 ```
 
-이 폴더에 `PLAN.md`, `CLAUDE.md`, `SETUP.md`, `DESIGN.md`를 넣고, `design\` 폴더를 만들어 `mockup.html`을 넣는다. 기존 편성표 엑셀이 있으면 `samples\` 폴더를 만들어 넣는다.
+이 폴더에 `PLAN.md`, `CLAUDE.md`, `SETUP.md`를 넣고, `design\` 폴더를 만들어 `mockup.html`을 넣는다. 디자인 기준은 저장소 루트의 `DESIGN.md`(모든 앱 공통)를 쓴다. 기존 편성표 엑셀이 있으면 `samples\` 폴더를 만들어 넣는다.
 
 ## 3. Claude Code 시작
 

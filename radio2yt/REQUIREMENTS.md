@@ -38,7 +38,7 @@
 - 명령줄의 유튜브 업로드는 **기본 꺼짐**. 방송국 공용 계정 + Google 앱 심사 통과 후에만 켠다. 그 전에는 mp4와 제목·설명 파일만 만들고 사람이 올린다. 화면의 [유튜브에 올리기]는 그대로 둔다.
 
 ## 디자인
-디자인 파일: `design\DESIGN.md`, `design\youtube-editor-design\` (mockup.html, design-notes.md, 화면 이미지, 아이콘)
+디자인 파일: `..\DESIGN.md`, `design\youtube-editor-design\` (mockup.html, design-notes.md, 화면 이미지, 아이콘)
 
 **우선순위: DESIGN.md > 목업.** 목업에서는 화면 구성(무엇이 어디에 있는지)만 가져오고, 생김새는 DESIGN.md를 따른다.
 

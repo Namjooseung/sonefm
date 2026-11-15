@@ -1,4 +1,4 @@
-/* 색·글꼴은 편성표 앱(sonefm-schedule/DESIGN.md, tokens.css)과 같은 토큰을 쓴다. 라이트 모드만. */
+/* 색·글꼴은 루트 DESIGN.md(모든 앱 공통) 토큰을 쓴다. 값은 편성표 앱 tokens.css와 같다. 라이트 모드만. */
 @font-face {
   font-family: "Pretendard";
   src: url("fonts/PretendardVariable.woff2") format("woff2");

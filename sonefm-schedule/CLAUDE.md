@@ -33,9 +33,8 @@
 - 패키징: `pyinstaller packaging/sonefm.spec` → Inno Setup으로 `packaging/installer.iss` 컴파일
 
 ## 디자인
-- 시각 디자인(색, 폰트, 간격, 컴포넌트 모양)은 **DESIGN.md**를 따른다. 화면 작업 전에 반드시 읽는다.
+- 시각 디자인(색, 폰트, 간격, 컴포넌트 모양)은 루트의 **`../DESIGN.md`**(모든 앱 공통)를 따른다. 화면 작업 전에 반드시 읽는다.
 - `design/mockup.html`은 화면 구성 참고용이다 (무엇이 어디에 있는지, 칸에 어떤 정보가 보이는지). 색·폰트 등 스타일이 DESIGN.md와 다르면 **DESIGN.md가 우선**.
-- DESIGN.md가 아직 없으면 P3(편성표 화면) 전에 사용자에게 요청한다. P0~P2는 화면 스타일 없이 진행해도 된다.
 - 디자인 값은 `frontend/src/styles/tokens.css`의 CSS 변수로만 정의하고 컴포넌트에서 색을 직접 쓰지 않는다.
 - 앱은 오프라인으로 동작하므로 웹폰트는 CDN이 아니라 `frontend/src/assets/fonts/`에 넣어 로컬 로드한다.
 

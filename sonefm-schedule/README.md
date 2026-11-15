@@ -1,6 +1,6 @@
 # SoneFM 편성표 앱 (개발자용)
 
-요구사항·도메인 규칙·단계 계획은 [PLAN.md](PLAN.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md), 시각 디자인은 [DESIGN.md](DESIGN.md)를 본다.
+요구사항·도메인 규칙·단계 계획은 [PLAN.md](PLAN.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md), 시각 디자인은 [DESIGN.md](../DESIGN.md)를 본다.
 비개발자용 문서는 [docs/](docs/)에 있다.
 
 ## 준비 (최초 1회)

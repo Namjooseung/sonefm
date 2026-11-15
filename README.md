@@ -27,7 +27,7 @@
 
 ## 문서
 
-- 설계: [PLATFORM_DESIGN.md](PLATFORM_DESIGN.md) · 앱 계약: [APP_CONTRACT.md](APP_CONTRACT.md) · 첫 레시피 명세: [INTEGRATION.md](INTEGRATION.md)
+- 설계: [PLATFORM_DESIGN.md](PLATFORM_DESIGN.md) · 앱 계약: [APP_CONTRACT.md](APP_CONTRACT.md) · 첫 레시피 명세: [INTEGRATION.md](INTEGRATION.md) · 공통 디자인: [DESIGN.md](DESIGN.md)
 - 비개발자 인수인계: [docs/](docs/) (설치와 사용, 문제 해결, 업무 유형·앱 추가)
 - 각 앱의 개발 규칙: 폴더마다 `CLAUDE.md`, 바깥에서 보는 입출력: `PLATFORM.md`
 

@@ -24,6 +24,7 @@ sonefm-platform (허브) ──명령줄──▶ sonefm-schedule (편성표)
 | [APP_CONTRACT.md](APP_CONTRACT.md) | 모든 앱이 지킬 규칙(계약 v1): 매니페스트, 호출, 결과 JSON, 종료 코드, 진행률, 비밀 |
 | [PLATFORM_DESIGN.md](PLATFORM_DESIGN.md) | 플랫폼 설계: 사람·데이터 흐름, 업무일지·편성 받기, 레시피, 화면, DB |
 | [INTEGRATION.md](INTEGRATION.md) | 첫 레시피 "유튜브 영상 만들기" 입출력 명세 |
+| [DESIGN.md](DESIGN.md) | **모든 앱 공통** 시각 디자인 규칙(goorm Vapor UI). 화면 작업 전에 읽는다. 앱별 목업은 배치만 참고하고 색·글꼴·컴포넌트 모양은 이 문서가 우선. 새 앱도 따른다 |
 | [docs/](docs/) | 비개발자 인수인계(설치·설정·문제 해결·레시피/앱 추가) |
 
 ## 앱

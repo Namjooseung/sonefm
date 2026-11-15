@@ -10,7 +10,7 @@
 | SIDEKIT MFCC | `engine/vendor/sidekit_mfcc.py` | **LGPL-3.0** (이 파일만 해당. scipy 의존 한 곳을 수정했고 `[radio2yt 수정]`으로 표시) | Anthony Larcher, Sylvain Meignier |
 | Pretendard 글꼴 | `assets/fonts/` | SIL Open Font License 1.1 (`assets/fonts/LICENSE.txt`) | https://github.com/orioncactus/pretendard |
 | Lucide 아이콘 | `assets/icons/` | ISC (`assets/icons/LICENSE.txt`) | https://lucide.dev |
-| 디자인 시스템 문서 | `design/DESIGN.md` | 문서 안의 출처 표기 참고 | goorm Vapor UI 공개 자료를 정리한 문서 |
+| 디자인 시스템 문서 | `../DESIGN.md` | 문서 안의 출처 표기 참고 | goorm Vapor UI 공개 자료를 정리한 문서 |
 
 설치판에만 들어가는 것 (저장소에는 없음):
 

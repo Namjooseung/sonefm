@@ -257,7 +257,7 @@ settings
 sonefm-scheduler/
   CLAUDE.md
   PLAN.md
-  DESIGN.md                 -- 시각 디자인 기준 (사용자가 별도 제공)
+  (DESIGN.md                -- 루트 ../DESIGN.md로 옮김, 모든 앱 공통)
   design/
     mockup.html             -- 편성표 화면 구성 시안 (레이아웃 참고용)
     SONE_로고_96.3MHz_고화질.png -- 로고 (아이콘 원본)

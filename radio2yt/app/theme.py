@@ -1,6 +1,6 @@
 """디자인 토큰과 Qt 스타일시트.
 
-우선순위: design/DESIGN.md > 목업. 목업은 화면 구성만 참고하고,
+우선순위: ../DESIGN.md > 목업. 목업은 화면 구성만 참고하고,
 색·글꼴·버튼·입력·카드는 모두 DESIGN.md(라이트) 팔레트에서 가져온다.
 """
 from __future__ import annotations

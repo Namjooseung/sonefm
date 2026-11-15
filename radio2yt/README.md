@@ -63,7 +63,7 @@ ffmpeg가 PATH에 있어야 합니다.
 |---|---|
 | `engine/segmenter.py` | 음성/음악/잡음 판별. inaSpeechSegmenter의 처리 흐름을 TensorFlow 없이 onnxruntime으로 옮김. 원본과 같은 결과 |
 | `engine/pipeline.py` | 자를 구간 결정, 결과 오디오, mp4 생성 (ffmpeg) |
-| `app/` | PySide6 화면. 디자인 기준은 `design/DESIGN.md` |
+| `app/` | PySide6 화면. 디자인 기준은 `../DESIGN.md` |
 | `radio2yt.py` | 명령줄 버전 |
 | `packaging/` | PyInstaller와 Inno Setup 설정 |
 | `tools/convert_model.py` | Keras 모델을 ONNX로 변환 (개발용, `requirements-dev.txt`) |

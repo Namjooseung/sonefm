@@ -1,7 +1,7 @@
 # sonefm-schedule — 플랫폼 연동 안내
 
 상위 폴더(`c:\DEV\Project\SoneFM`)의 통합 플랫폼에서 이 프로그램을 이해하고 데이터를 가져다 쓰기 위한 문서다.
-개발 규칙은 [CLAUDE.md](CLAUDE.md), 요구사항·도메인 규칙·결정 기록은 [PLAN.md](PLAN.md), 시각 디자인은 [DESIGN.md](DESIGN.md), 개발자 실행·빌드는 [README.md](README.md)가 기준이다. 이 문서는 **바깥에서 보는 데이터와 호출 방법**만 다룬다.
+개발 규칙은 [CLAUDE.md](CLAUDE.md), 요구사항·도메인 규칙·결정 기록은 [PLAN.md](PLAN.md), 시각 디자인은 [DESIGN.md](../DESIGN.md), 개발자 실행·빌드는 [README.md](README.md)가 기준이다. 이 문서는 **바깥에서 보는 데이터와 호출 방법**만 다룬다.
 
 ## 한 줄 요약
 
