@@ -1,0 +1,40 @@
+{
+  "id": "youtube-video",
+  "name": "유튜브 영상 만들기",
+  "summary": "편성표에서 프로그램 이름·회차를 찾아, 송출 mp3로 유튜브용 mp4를 만든다. 업로드는 사람이 한다.",
+  "keywords": ["유튜브", "youtube", "영상"],
+  "inputs": [
+    {"name": "date", "label": "방송 날짜", "type": "date", "default": "{task.date}"},
+    {"name": "hour", "label": "시작 시각(6~22)", "type": "int", "from_text": "(\\d{1,2})\\s*시"},
+    {"name": "audio", "label": "송출 mp3", "type": "file"},
+    {"name": "thumb", "label": "썸네일", "type": "file", "remember": true}
+  ],
+  "steps": [
+    {
+      "id": "info",
+      "app": "sonefm-schedule",
+      "command": "lookup",
+      "args": {"date": "{input.date}", "hour": "{input.hour}", "db": "{schedule_db}"}
+    },
+    {
+      "id": "video",
+      "app": "radio2yt",
+      "command": "make-video",
+      "args": {
+        "audio": "{input.audio}",
+        "thumb": "{input.thumb}",
+        "title": "{info.data.label}",
+        "description": "{info.data.label} ({input.date} 방송)\nSoneFM 96.3 수원공동체라디오",
+        "out_dir": "{home}/유튜브"
+      }
+    }
+  ],
+  "result": {
+    "open": [{"label": "mp4 폴더 열기", "path": "{video.data.out_dir}"}],
+    "copy": [
+      {"label": "제목 복사", "text": "{video.data.title}"},
+      {"label": "설명 복사", "text": "{video.data.description}"}
+    ],
+    "links": [{"label": "유튜브 스튜디오 열기", "url": "https://studio.youtube.com"}]
+  }
+}
