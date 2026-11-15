@@ -15,6 +15,11 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# 플랫폼용 명령줄: 화면(webview)을 불러오기 전에 갈라진다
+if __name__ == "__main__" and sys.argv[1:2] == ["--cli"]:
+    from app.cli import main as cli_main
+    sys.exit(cli_main(sys.argv[2:]))
+
 import webview  # noqa: E402
 
 from app import APP_NAME  # noqa: E402

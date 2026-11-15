@@ -29,6 +29,7 @@
 - 프론트 빌드: `cd frontend && npm run build` (결과물을 앱이 로드)
 - 앱 실행: `python app/main.py` (개발 모드에서는 Vite 개발 서버를 로드하는 옵션 제공)
 - 테스트: `pytest -q`
+- 플랫폼용 명령줄: `python app/main.py --cli <명령>` (`app/cli.py`). 상위 `../APP_CONTRACT.md` 규칙을 따른다. 명령을 추가·변경하면 `sonefm-app.json`, `tests/test_cli.py`, `PLATFORM.md`를 같이 고친다.
 - 패키징: `pyinstaller packaging/sonefm.spec` → Inno Setup으로 `packaging/installer.iss` 컴파일
 
 ## 디자인

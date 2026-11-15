@@ -7,7 +7,7 @@
 ; - AppId 고정: 새 버전을 같은 설치 파일로 덮어 설치하면 업데이트된다.
 
 #define AppName "SoneFM 편성표"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define AppExe "SoneFM.exe"
 
 [Setup]
@@ -38,6 +38,7 @@ Name: "desktopicon"; Description: "바탕화면에 아이콘 만들기"; GroupDe
 
 [Files]
 Source: "..\dist\SoneFM\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\sonefm-app.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
