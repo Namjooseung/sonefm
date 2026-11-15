@@ -8,7 +8,10 @@ const emit = defineEmits(['close'])
 const items = ref(null)
 const error = ref('')
 
-const ENTITY = { cell: '칸', month: '월', program: '프로그램', undo: '되돌리기' }
+const ENTITY = {
+  cell: '칸', month: '월', program: '프로그램', undo: '되돌리기',
+  settings: '설정', holiday: '공휴일', import: '엑셀 가져오기',
+}
 
 function when(iso) {
   const d = new Date(iso)

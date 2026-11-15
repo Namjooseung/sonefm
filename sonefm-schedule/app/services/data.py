@@ -15,6 +15,7 @@ from app.backup import _PATTERN, backup_db, prune_backups
 from app.config import AppConfig, migrations_dir, save_config
 from app.db.connection import connect
 from app.db.migrate import apply_migrations, discover
+from app.repository import meta_repo
 
 log = logging.getLogger("sonefm.data")
 Result = dict[str, Any]
@@ -45,8 +46,8 @@ def check_db_file(path: str | Path) -> str | None:
     try:
         conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
         try:
-            tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            tables = meta_repo.table_names(conn)
+            version = meta_repo.schema_version(conn)
         finally:
             conn.close()
     except sqlite3.DatabaseError:

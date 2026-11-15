@@ -1,6 +1,5 @@
 <script setup>
-// 오른쪽 패널: 월 총 방송분, 확인할 것 목록, 범례.
-// P3: 생성 때 발견한 편성 자리 충돌만 보여준다. 전체 검증(빈칸·본방 대기·비율 등)은 P5에서 채운다.
+// 오른쪽 패널: 월 총 방송분, 확인할 것 목록(빈칸·총 방송분·본방 대기·고아 예외·편성 자리 충돌), 범례.
 const props = defineProps({
   month: { type: Number, required: true },
   totals: { type: Object, required: true },

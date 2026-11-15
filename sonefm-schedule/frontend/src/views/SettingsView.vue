@@ -131,7 +131,6 @@ onActivated(loadAll)
           </select>
         </div>
       </div>
-      <p class="muted small">법정 편성비율 기준값은 허가 조건 확인 후 추가합니다.</p>
       <div><button class="btn btn-primary" :disabled="busy" @click="saveRules">저장</button></div>
     </div>
 

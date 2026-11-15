@@ -24,8 +24,8 @@ from app.domain.weeks import iso_week, month_of_week, week_dates
 from app.io_excel.reader import Sheet, read_workbook
 from app.io_excel.writer import MonthSheet, WeekBlock, write_months
 from app.repository import change_log_repo, programs_repo, schedule_repo, settings_repo
-from app.repository._common import new_id, now_iso
 from app.services import programs as program_service
+from app.services.schedule import _episode_map, rerun_mark_map
 
 Result = dict[str, Any]
 Key = tuple[date, int]
@@ -142,17 +142,6 @@ def analyze(conn: sqlite3.Connection, path: str) -> Result:
 
 # ── 2. 가져오기 ───────────────────────────────────
 
-def _put_import_cell(conn: sqlite3.Connection, d: date, hour: int, pid: str, kind: str) -> None:
-    ts = now_iso()
-    conn.execute(
-        "INSERT INTO schedule_cells (id, date, hour, program_id, kind, source, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, 'import', ?, ?) ON CONFLICT(date, hour) DO UPDATE SET"
-        " program_id = excluded.program_id, kind = excluded.kind, source = 'import', exception_type = NULL,"
-        " original_program_id = NULL, original_slot_id = NULL, rerun_episode_override = NULL,"
-        " updated_at = excluded.updated_at",
-        (new_id(), d.isoformat(), hour, pid, kind, ts, ts))
-
-
 def run_import(conn: sqlite3.Connection, path: str, titles: list[str], mapping: dict[str, dict[str, Any]],
                overwrite: bool = True) -> Result:
     """mapping: 엑셀 이름 → {action, ...}
@@ -257,7 +246,7 @@ def run_import(conn: sqlite3.Connection, path: str, titles: list[str], mapping: 
             continue
         if p is None:
             if h in FIXED_HOURS and h in fixed:
-                _put_import_cell(conn, d, h, fixed[h], "본방")
+                schedule_repo.put_import_cell(conn, d, h, fixed[h], "본방")
                 written += 1
             elif existing:
                 schedule_repo.delete_cell(conn, d, h)
@@ -269,7 +258,7 @@ def run_import(conn: sqlite3.Connection, path: str, titles: list[str], mapping: 
             if existing:
                 schedule_repo.delete_cell(conn, d, h)
             continue
-        _put_import_cell(conn, d, h, pid, kinds.get((d, h), p.kind))
+        schedule_repo.put_import_cell(conn, d, h, pid, kinds.get((d, h), p.kind))
         excel_ep[(d, h)] = (pid, p.episode)
         written += 1
     for y, m in months:
@@ -311,7 +300,7 @@ def _infer_new(conn, created: list[str], resolved: dict[str, str], cells, kinds:
     inferred = ended = 0
     for pid in created:
         prog = programs_repo.get_program(conn, pid)
-        data = {k: prog[k] for k in programs_repo._PROGRAM_COLS}  # noqa: SLF001
+        data = {k: prog[k] for k in programs_repo.PROGRAM_COLS}
         g = guess.get(pid)
         if pid in last_seen and mondays and last_seen[pid] < mondays[0]:
             data["end_date"] = last_seen[pid].isoformat()
@@ -372,7 +361,7 @@ def _align_episodes(conn: sqlite3.Connection, excel_ep: dict[Key, tuple[str, int
             if first_re is not None and not any(c.kind == "본방" and c.key < first_re.key for c in cells):
                 start = excel_ep[first_re.key][1] + 1
         if start != prog["start_episode"]:
-            conn.execute("UPDATE programs SET start_episode = ?, updated_at = ? WHERE id = ?", (start, now_iso(), pid))
+            programs_repo.set_start_episode(conn, pid, start)
         infos = compute_episodes(cells, start)
         for c, info in zip(cells, infos):
             want = excel_ep.get(c.key, (None, None))[1]
@@ -403,9 +392,8 @@ def _diff_episodes(conn: sqlite3.Connection, excel_ep: dict[Key, tuple[str, int 
 
 # ── 3. 내보내기 ───────────────────────────────────
 
-def _cell_texts(conn: sqlite3.Connection, first: date, last: date) -> dict[Key, tuple[str, bool, bool]]:
+def _cell_texts(conn: sqlite3.Connection, first: date, last: date) -> dict[Key, tuple[str, bool, bool, str]]:
     """(날짜, 시) → (엑셀 글자, 재방 표시 여부, 고정 편성 그대로인지, 프로그램 id)."""
-    from app.services.schedule import _episode_map, rerun_mark_map
     episodes = _episode_map(conn, last)
     marks = rerun_mark_map(conn, first, last)
     display = schedule_repo.program_display(conn)

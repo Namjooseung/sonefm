@@ -1,7 +1,4 @@
-"""설정 화면의 운영 기준값 (settings 테이블) + 임시공휴일.
-
-비율 기준값은 보류 (PLAN P5).
-"""
+"""설정 화면의 운영 기준값 (settings 테이블) + 임시공휴일."""
 from __future__ import annotations
 
 import sqlite3

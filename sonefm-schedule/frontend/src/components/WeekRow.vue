@@ -123,7 +123,7 @@ const collapsed = computed(() => props.week.is_reference && isEmpty.value)
     <div v-if="!collapsed && !folded" class="grid">
       <template v-for="h in hours" :key="h">
         <div class="hr">{{ String(h).padStart(2, '0') }}</div>
-        <div v-if="bands[h]" class="band" :class="bandHitClass(h)":title="`매일 ${String(h).padStart(2, '0')}:00 고정 편성 · 눌러서 특정 날만 바꾸기`" @click="onBand(h, $event)">
+        <div v-if="bands[h]" class="band" :class="bandHitClass(h)" :title="`매일 ${String(h).padStart(2, '0')}:00 고정 편성 · 눌러서 특정 날만 바꾸기`" @click="onBand(h, $event)">
           <b>{{ bands[h] }}</b><span>매일 {{ String(h).padStart(2, '0') }}:00 · 고정 편성</span>
         </div>
         <template v-else>

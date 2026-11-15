@@ -1,7 +1,7 @@
 """경로와 부트스트랩 설정.
 
 DB 위치처럼 DB를 열기 *전에* 알아야 하는 값만 여기(config.json)에 둔다.
-운영 기준값(비율, 고정 편성, 경고 횟수 등)은 DB의 settings 테이블에 둔다.
+운영 기준값(고정 편성, 방송 없는 주 처리 등)은 DB의 settings 테이블에 둔다.
 """
 from __future__ import annotations
 

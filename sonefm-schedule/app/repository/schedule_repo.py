@@ -51,6 +51,18 @@ def upsert_rule_cell(conn: sqlite3.Connection, c: Cell) -> None:
         (new_id(), c.date.isoformat(), c.hour, c.program_id, c.kind, c.original_slot_id, ts, ts))
 
 
+def put_import_cell(conn: sqlite3.Connection, d: date, hour: int, program_id: str, kind: str) -> None:
+    """엑셀에서 가져온 칸 쓰기. 같은 자리에 칸이 있으면 가져온 내용으로 바꾼다."""
+    ts = now_iso()
+    conn.execute(
+        "INSERT INTO schedule_cells (id, date, hour, program_id, kind, source, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, 'import', ?, ?) ON CONFLICT(date, hour) DO UPDATE SET"
+        " program_id = excluded.program_id, kind = excluded.kind, source = 'import', exception_type = NULL,"
+        " original_program_id = NULL, original_slot_id = NULL, rerun_episode_override = NULL,"
+        " updated_at = excluded.updated_at",
+        (new_id(), d.isoformat(), hour, program_id, kind, ts, ts))
+
+
 def delete_cell(conn: sqlite3.Connection, d: date, hour: int) -> None:
     conn.execute("DELETE FROM schedule_cells WHERE date = ? AND hour = ?", (d.isoformat(), hour))
 

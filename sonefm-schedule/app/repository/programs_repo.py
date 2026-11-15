@@ -6,7 +6,7 @@ from typing import Any
 
 from app.repository._common import new_id, now_iso
 
-_PROGRAM_COLS = (
+PROGRAM_COLS = (
     "name", "category", "is_listener_participation", "producer_type", "cycle_type",
     "cycle_anchor_date", "monthly_nth", "offweek_policy", "start_episode", "start_date",
     "end_date", "host", "cohort", "is_special", "memo", "show_episode",
@@ -84,18 +84,18 @@ def slot_counts(conn: sqlite3.Connection) -> dict[str, int]:
 def insert_program(conn: sqlite3.Connection, data: dict[str, Any]) -> str:
     pid = new_id()
     ts = now_iso()
-    cols = ", ".join(_PROGRAM_COLS)
-    marks = ", ".join("?" for _ in _PROGRAM_COLS)
+    cols = ", ".join(PROGRAM_COLS)
+    marks = ", ".join("?" for _ in PROGRAM_COLS)
     conn.execute(
         f"INSERT INTO programs (id, {cols}, created_at, updated_at) VALUES (?, {marks}, ?, ?)",
-        (pid, *[data[c] for c in _PROGRAM_COLS], ts, ts))
+        (pid, *[data[c] for c in PROGRAM_COLS], ts, ts))
     return pid
 
 
 def update_program(conn: sqlite3.Connection, program_id: str, data: dict[str, Any]) -> None:
-    sets = ", ".join(f"{c} = ?" for c in _PROGRAM_COLS)
+    sets = ", ".join(f"{c} = ?" for c in PROGRAM_COLS)
     conn.execute(f"UPDATE programs SET {sets}, updated_at = ? WHERE id = ?",
-                 (*[data[c] for c in _PROGRAM_COLS], now_iso(), program_id))
+                 (*[data[c] for c in PROGRAM_COLS], now_iso(), program_id))
 
 
 def set_end_date(conn: sqlite3.Connection, program_id: str, end_date: str | None) -> None:
@@ -106,6 +106,11 @@ def set_end_date(conn: sqlite3.Connection, program_id: str, end_date: str | None
 def set_start_date(conn: sqlite3.Connection, program_id: str, start_date: str) -> None:
     conn.execute("UPDATE programs SET start_date = ?, updated_at = ? WHERE id = ?",
                  (start_date, now_iso(), program_id))
+
+
+def set_start_episode(conn: sqlite3.Connection, program_id: str, start_episode: int) -> None:
+    conn.execute("UPDATE programs SET start_episode = ?, updated_at = ? WHERE id = ?",
+                 (start_episode, now_iso(), program_id))
 
 
 def replace_aliases(conn: sqlite3.Connection, program_id: str, aliases: list[str]) -> None:
