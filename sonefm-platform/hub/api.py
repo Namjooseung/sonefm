@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from hub import APP_NAME, APP_VERSION, db, registry, schedule_inbox, worklog
+from hub.ai import gateway, keys
+from hub.ai import settings as ai_settings
 from hub.paths import home, load_config, platform_dir, recipe_dirs, save_config
 from hub.recipes import Classifier, RecipeError, coerce_inputs, form, keyword_classifier, load_recipes, run_recipe
 
@@ -209,3 +211,44 @@ class Api:
             return {"ok": False, "message": "업무일지 링크가 구글 시트 주소가 아닙니다."}
         save_config({**load_config(), **cfg})
         return {"ok": True}
+
+    # ── AI (키 값은 어떤 응답에도 담지 않는다) ─────────
+    def _guard(self, fn: Callable[[], dict[str, Any]]) -> dict[str, Any]:
+        try:
+            return fn()
+        except (ValueError, RuntimeError) as e:   # keys·settings가 던지는 한국어 메시지
+            return {"ok": False, "errors": [str(e)]}
+        except Exception:  # noqa: BLE001
+            log.exception("AI 설정 처리 오류")
+            return {"ok": False, "errors": ["예상하지 못한 문제가 생겼습니다. 로그(platform.log)를 확인하거나 담당자에게 알려 주세요."]}
+
+    def ai_status(self) -> dict[str, Any]:
+        return self._guard(lambda: {"ok": True, **ai_settings.status()})
+
+    def ai_save_key(self, key: str) -> dict[str, Any]:
+        def go() -> dict[str, Any]:
+            keys.save_key(key)
+            return {"ok": True, "message": "API 키를 저장했습니다."}
+        return self._guard(go)
+
+    def ai_delete_key(self) -> dict[str, Any]:
+        def go() -> dict[str, Any]:
+            keys.delete_key()
+            return {"ok": True, "message": "API 키를 지웠습니다."}
+        return self._guard(go)
+
+    def ai_test(self) -> dict[str, Any]:
+        def go() -> dict[str, Any]:
+            try:
+                r = gateway.complete("connection_test", "light", [{"role": "user", "content": "연결 확인입니다. 한 단어로 답해 주세요."}],
+                                     max_tokens=16)
+            except gateway.AIError as e:
+                return {"ok": False, "kind": e.kind, "errors": [e.message]}
+            return {"ok": True, "message": f"연결되었습니다. (모델 {r.model})"}
+        return self._guard(go)
+
+    def ai_save_settings(self, ai: dict[str, Any]) -> dict[str, Any]:
+        def go() -> dict[str, Any]:
+            ai_settings.save(ai if isinstance(ai, dict) else {})
+            return {"ok": True, "message": "AI 설정을 저장했습니다."}
+        return self._guard(go)

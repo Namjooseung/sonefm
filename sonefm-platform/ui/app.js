@@ -202,12 +202,102 @@ async function settingsDialog() {
   })
 }
 
+// ── AI 설정 ───────────────────────────────────
+const PRICE_COLS = [['input', '입력'], ['output', '출력'], ['cache_write', '캐시 쓰기'], ['cache_read', '캐시 읽기']]
+const usd = (n) => (n == null ? '-' : `$${Number(n).toFixed(4)}`)
+const val = (n) => (n == null ? '' : n)
+
+function aiMsg(text, ok) {
+  const m = $('#ai-msg')
+  if (!m) return
+  m.textContent = text
+  m.className = `ai-msg small ${ok ? 'st-ok' : 'st-error'}`
+}
+
+function aiUsageHtml(s) {
+  const u = s.usage
+  const pct = (used, lim) => (lim ? ` (한도 ${lim}달러 중 ${Math.round((used / lim) * 100)}%)` : ' (한도 없음)')
+  return `<p class="small">오늘 ${usd(u.today_usd)}${pct(u.today_usd, s.limits.daily_usd)}<br>
+    이번 달 ${usd(u.month_usd)}${pct(u.month_usd, s.limits.monthly_usd)} · 호출 ${u.month_calls}회</p>`
+}
+
+async function aiDialog() {
+  const s = await api().ai_status()
+  if (!s.ok) return toast(s.errors[0])
+  const rows = Object.entries(s.prices).map(([m, p]) => `<tr><td class="small">${esc(m)}</td>
+    ${PRICE_COLS.map(([k, l]) => `<td><input type="number" min="0" step="any" data-price="${esc(m)}" data-k="${k}" value="${esc(val(p[k]))}" aria-label="${esc(m)} ${l}"></td>`).join('')}</tr>`).join('')
+  openDialog(`<h2>AI 설정</h2>
+    <h3>API 키</h3>
+    <p class="small" id="ai-keystate">상태: <b class="${s.has_key ? 'st-ok' : 'muted'}">${s.has_key ? '저장됨' : '없음'}</b>
+      <span class="muted">(방송국 소유 키만 넣어 주세요. Windows 자격 증명 관리자에 저장되며 화면에 다시 보이지 않습니다)</span></p>
+    <div class="field"><label for="ai-key">새 키 입력</label>
+      <input type="password" id="ai-key" autocomplete="off" spellcheck="false"></div>
+    <div class="ai-row">
+      <button type="button" class="btn btn-sm" data-ai="save">키 저장</button>
+      <button type="button" class="btn btn-sm" data-ai="test">연결 확인</button>
+      <button type="button" class="btn btn-sm" data-ai="delete">키 삭제</button></div>
+    <p class="ai-msg small" id="ai-msg"></p>
+    <div class="ai-section"><h3>사용 설정</h3>
+      <label class="ai-check"><input type="checkbox" id="ai-enabled" ${s.enabled ? 'checked' : ''}>AI 기능 켜기</label>
+      ${fieldHtml({ name: 'ai-light', label: '가벼운 작업용 모델 ID (light)', type: 'string', value: s.models.light })}
+      ${fieldHtml({ name: 'ai-heavy', label: '무거운 작업용 모델 ID (heavy)', type: 'string', value: s.models.heavy })}
+      <p class="muted small">모델 ID를 바꾸면 저장한 뒤 이 창을 다시 열어 새 모델의 단가를 넣어 주세요.</p></div>
+    <div class="ai-section"><h3>단가 (USD / 백만 토큰)</h3>
+      <table class="ai-grid"><thead><tr><th>모델</th>${PRICE_COLS.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+      <p class="muted small">단가가 비어 있으면 그 모델은 호출하지 않습니다. 공식 가격표를 보고 모두 채워 주세요.</p></div>
+    <div class="ai-section"><h3>사용 한도 (USD)</h3>
+      ${fieldHtml({ name: 'ai-daily', label: '하루 한도', type: 'string', value: val(s.limits.daily_usd), optional: true })}
+      ${fieldHtml({ name: 'ai-monthly', label: '한 달 한도', type: 'string', value: val(s.limits.monthly_usd), optional: true })}
+      <p class="muted small">비워 두면 무제한입니다. 한도를 넘으면 호출이 막힙니다.</p></div>
+    <div class="ai-section"><h3>개인정보 가리기</h3>
+      <label class="ai-check"><input type="checkbox" id="ai-mask" ${s.masking.enabled ? 'checked' : ''}>보내기 전에 전화번호·주민번호·계좌·이메일과 아래 이름을 가립니다</label>
+      ${fieldHtml({ name: 'ai-names', label: '가릴 이름 (한 줄에 하나)', type: 'text', value: s.masking.names.join('\n'), optional: true })}
+      <p class="muted small">목록에 있는 이름만 가립니다. 목록에 없는 이름은 그대로 전송됩니다.</p></div>
+    <div class="ai-section"><h3>이번 달 사용량</h3>${aiUsageHtml(s)}</div>`, async (dlg) => {
+    const price = {}
+    dlg.querySelectorAll('[data-price]').forEach((i) => { (price[i.dataset.price] ??= {})[i.dataset.k] = i.value })
+    const r = await api().ai_save_settings({
+      enabled: $('#ai-enabled').checked,
+      models: { light: $('#f-ai-light').value, heavy: $('#f-ai-heavy').value },
+      prices: price,
+      limits: { daily_usd: $('#f-ai-daily').value, monthly_usd: $('#f-ai-monthly').value },
+      masking: { enabled: $('#ai-mask').checked, names: $('#f-ai-names').value },
+    })
+    if (!r.ok) return r.errors[0]
+    toast(r.message)
+  })
+  $('#dlg-ok').textContent = '설정 저장'
+}
+
+async function aiAction(kind) {
+  const keyBox = $('#ai-key')
+  let r
+  if (kind === 'save') {
+    r = await api().ai_save_key(keyBox.value)
+    keyBox.value = ''
+  } else if (kind === 'delete') {
+    if (!confirm('저장된 API 키를 지울까요? 다시 쓰려면 키를 새로 입력해야 합니다.')) return
+    r = await api().ai_delete_key()
+  } else {
+    aiMsg('확인하는 중입니다…', true)
+    r = await api().ai_test()
+  }
+  aiMsg(r.ok ? r.message : r.errors[0], r.ok || r.kind === 'off')
+  const s = await api().ai_status()
+  if (s.ok) {
+    const b = $('#ai-keystate b')
+    b.className = s.has_key ? 'st-ok' : 'muted'
+    b.textContent = s.has_key ? '저장됨' : '없음'
+  }
+}
+
 // ── 이벤트 ───────────────────────────────────
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('button')
   if (!b) return
   const d = b.dataset
-  if (d.run) runDialog(d.run, d.recipe)
+  if (d.ai) aiAction(d.ai)
+  else if (d.run) runDialog(d.run, d.recipe)
   else if (d.mark) { await api().mark(d.mark, d.done === '1'); load() }
   else if (d.del) { await api().delete_task(d.del); load() }
   else if (d.app) { const r = await api().open_app(d.app); if (!r.ok) toast(r.message) }
@@ -222,6 +312,7 @@ document.addEventListener('click', async (e) => {
 })
 $('#btn-refresh').addEventListener('click', () => load(true))
 $('#btn-add').addEventListener('click', addDialog)
+$('#btn-ai').addEventListener('click', aiDialog)
 $('#btn-settings').addEventListener('click', settingsDialog)
 
 window.addEventListener('pywebviewready', async () => {

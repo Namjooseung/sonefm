@@ -141,6 +141,11 @@ def ai_cost_sum(start: str, end: str) -> float:
                          (start, end)).fetchone()[0]
 
 
+def ai_call_count(start: str, end: str) -> int:
+    with connect() as c:
+        return c.execute("SELECT COUNT(*) FROM ai_calls WHERE at >= ? AND at < ?", (start, end)).fetchone()[0]
+
+
 def set_meta(key: str, value: Any) -> None:
     with connect() as c:
         c.execute("INSERT INTO meta (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET"

@@ -15,6 +15,7 @@ from typing import Any, Callable
 
 from hub import db
 from hub.ai import schema as S
+from hub.ai.keys import get_key
 from hub.ai.mask import KINDS, mask
 from hub.ai.providers import Provider, ProviderAuthError, ProviderNetworkError, ProviderReply
 from hub.paths import load_config
@@ -103,8 +104,10 @@ class Gateway:
     def _complete(self, feature, tier, messages, system, tools, schema, max_tokens) -> AIResult:
         cfg = load_config()["ai"]
         key = self._key_getter()
-        if not cfg["enabled"] or not key or self._provider_factory is None:
+        if not cfg["enabled"] or not key:
             raise AIError("off")
+        if self._provider_factory is None:
+            raise AIError("off", "AI 연결 기능이 아직 준비되지 않았습니다. 다음 업데이트 뒤에 쓸 수 있습니다.")
         model = cfg["models"][tier]    # 모르는 등급은 KeyError → internal (코드 실수)
         price = cfg["prices"].get(model) or {}
         if any(price.get(k) is None for k in ("input", "output", "cache_write", "cache_read")):
@@ -193,7 +196,7 @@ class Gateway:
                                         f"썼고 {release}. 급하면 설정에서 한도를 올려 주세요.")
 
 
-_default = Gateway()   # 1a: 키 없음 → 항상 off. 1b에서 keyring·공급자를 연결한다
+_default = Gateway(key_getter=get_key)   # 공급자 factory는 1c. 지금은 키가 있어도 off
 
 
 def complete(feature: str, tier: str, messages: list[dict], system: Any = None, tools: Any = None,

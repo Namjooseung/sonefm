@@ -103,7 +103,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
 .result-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .skipped { margin: 6px 0; padding-left: 18px; color: var(--orange-700); }
 
-dialog { border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; width: 520px; max-width: 92vw; color: var(--text); font: inherit; }
+dialog { border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; width: 520px; max-height: 90vh; overflow-y: auto; max-width: 92vw; color: var(--text); font: inherit; }
 dialog::backdrop { background: oklch(0 0 0 / 0.3); }
 dialog h2 { font-size: 17px; }
 .field { margin: 12px 0; }
@@ -112,6 +112,16 @@ dialog h2 { font-size: 17px; }
   width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: var(--radius);
 }
 .field textarea { min-height: 70px; }
+.field input[type=password] { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: var(--radius); }
+.ai-section { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 4px; }
+.ai-section h3 { font-size: 14px; margin: 10px 0 0; }
+.ai-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ai-grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ai-grid th { text-align: left; font-weight: 500; color: var(--text-muted); padding: 0 4px 4px; }
+.ai-grid td { padding: 2px 4px; }
+.ai-grid input { width: 100%; font: inherit; padding: 5px 7px; border: 1px solid var(--gray-200); border-radius: var(--radius); }
+.ai-check { display: flex; gap: 6px; align-items: center; margin: 10px 0; font-weight: 500; }
+.ai-msg { min-height: 1.2em; margin: 6px 0 0; }
 .file-row { display: flex; gap: 6px; }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .dlg-error { color: var(--red-700); min-height: 1.2em; margin: 8px 0 0; }

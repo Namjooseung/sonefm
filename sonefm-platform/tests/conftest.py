@@ -2,7 +2,10 @@ import json
 import sys
 from pathlib import Path
 
+import keyring
 import pytest
+from keyring.backend import KeyringBackend
+from keyring.errors import PasswordDeleteError
 
 FAKE = Path(__file__).with_name("fake_app.py")
 
@@ -14,6 +17,34 @@ def isolated(tmp_path, monkeypatch):
     for var in ("LOCALAPPDATA", "ProgramFiles", "ProgramFiles(x86)"):
         monkeypatch.setenv(var, str(tmp_path / "none"))
     return tmp_path
+
+
+class MemoryKeyring(KeyringBackend):
+    priority = 1
+
+    def __init__(self):
+        self.data = {}
+
+    def get_password(self, service, username):
+        return self.data.get((service, username))
+
+    def set_password(self, service, username, password):
+        self.data[(service, username)] = password
+
+    def delete_password(self, service, username):
+        if (service, username) not in self.data:
+            raise PasswordDeleteError("없음")
+        del self.data[(service, username)]
+
+
+@pytest.fixture(autouse=True)
+def memory_keyring():
+    """실제 Windows 자격 증명 관리자를 건드리지 않는다."""
+    original = keyring.get_keyring()
+    mem = MemoryKeyring()
+    keyring.set_keyring(mem)
+    yield mem
+    keyring.set_keyring(original)
 
 
 def make_app(folder: Path, app_id: str, commands=("run", "check-db", "lookup", "make-video"), contract=1,
