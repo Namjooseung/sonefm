@@ -33,7 +33,8 @@
 ```
 py -3.12 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements-dev.txt
-.venv\Scripts\python -m hub                 # 실행
+.venv\Scripts\python -m hub                 # 실행 (실제 데이터)
+실행.bat                                    # 체험: demo-data\ + tools/demo_setup.py가 견본 준비
 .venv\Scripts\python -m pytest -q           # 테스트 (옆 폴더에 두 앱 개발 환경 + ffmpeg가 있으면 실제 앱 연동 테스트도 돈다)
 .venv\Scripts\python -m PyInstaller packaging/platform.spec --noconfirm   # → dist\SoneFMPlatform\
 ISCC packaging\installer.iss               # Inno Setup 6 → packaging\Output\ (UTF-8 BOM 유지)

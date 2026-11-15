@@ -6,6 +6,10 @@ SoneFM 96.3 업무자동화 PC용 허브 앱. 국장 업무일지에서 오늘 �
 - 설계: [../PLATFORM_DESIGN.md](../PLATFORM_DESIGN.md) · 앱 규칙: [../APP_CONTRACT.md](../APP_CONTRACT.md) · 첫 레시피: [../INTEGRATION.md](../INTEGRATION.md)
 - 개발 규칙: [CLAUDE.md](CLAUDE.md)
 
+## 바로 체험하기
+
+`실행.bat`을 더블클릭하면 exe 없이 개발 폴더에서 실행됩니다. 실제 `문서\SoneFM` 대신 `demo-data\`를 쓰고, 옆 폴더의 두 앱·견본 편성·오늘 날짜 견본 업무일지·견본 mp3를 자동으로 준비합니다. 처음부터 다시 하려면 `demo-data` 폴더를 지우세요. (필요: 이 폴더와 `..\sonefm-schedule`, `..adio2yt`의 `.venv`, ffmpeg)
+
 ## 개발
 
 ```
