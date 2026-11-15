@@ -1,0 +1,30 @@
+{
+  "contract": 1,
+  "id": "radio2yt",
+  "name": "SoneFM 유튜브 편집기",
+  "version": "1.1",
+  "cli": { "exe": ["SoneFMEditor.exe", "--cli"], "dev": [".venv/Scripts/python.exe", "radio2yt.py"] },
+  "gui": { "exe": ["SoneFMEditor.exe"], "dev": [".venv/Scripts/pythonw.exe", "-m", "app"] },
+  "commands": {
+    "make-video": {
+      "summary": "송출 오디오에서 20초 이상 음악을 잘라내고 썸네일 정지 화면을 붙여 유튜브용 mp4를 만든다",
+      "timeout": 1800,
+      "input": {
+        "audio": { "type": "file", "required": true, "help": "송출 오디오(mp3 등) 파일 또는 폴더" },
+        "thumb": { "type": "file", "required": false, "help": "썸네일 이미지. 없으면 같은 이름의 이미지, 폴더에 하나뿐인 이미지 순으로 찾는다" },
+        "out_dir": { "type": "folder", "required": false, "help": "결과 폴더 (기본: 현재 폴더의 output)" },
+        "title": { "type": "string", "required": false, "help": "유튜브 제목. 주면 <이름>_youtube.txt로 남긴다" },
+        "description": { "type": "text", "required": false, "help": "유튜브 설명" },
+        "dry_run": { "type": "bool", "required": false, "help": "분석만 하고 mp4는 만들지 않음" },
+        "upload": { "type": "bool", "required": false, "help": "유튜브 업로드. 기본 꺼짐. 방송국 공용 계정 로그인과 Google 심사 통과 후에만 켠다" }
+      },
+      "output": {
+        "mp4": "첫 번째 결과 mp4 경로 (없으면 null)",
+        "videos": "[{source, mp4, url}] 파일별 결과 (url은 업로드했을 때만)",
+        "title": "받은 제목",
+        "description": "받은 설명",
+        "out_dir": "결과 폴더 절대 경로"
+      }
+    }
+  }
+}

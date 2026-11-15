@@ -20,7 +20,10 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt   # numpy, onnxruntime, PySide6
 .venv\Scripts\python -m app                               # 화면 (또는 실행.bat)
 .venv\Scripts\python radio2yt.py 파일.mp3 --dry-run        # 명령줄, 분석만
+.venv\Scripts\python -m unittest tests.test_cli tests.test_youtube   # 테스트
 ```
+
+플랫폼용 명령줄은 `radio2yt.py make-video`(설치판 `SoneFMEditor.exe --cli make-video`)이고 상위 `../APP_CONTRACT.md` 규칙을 따른다. 인자·결과를 바꾸면 `sonefm-app.json`, `tests/test_cli.py`, `PLATFORM.md`를 같이 고친다.
 
 ffmpeg가 PATH에 있어야 한다. 설치판에는 `_internal/bin/ffmpeg.exe`가 들어간다. ffprobe는 쓰지 않는다.
 

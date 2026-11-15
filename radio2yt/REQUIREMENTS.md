@@ -32,6 +32,11 @@
 - 제목·설명 입력칸을 띄운다. 제목은 mp3 파일 이름으로 채워 두고, **[이전 업로드 불러오기]**로 전에 올린 제목·설명을 가져올 수 있다(최근 20개).
 - Google 연결 설정 파일 `assets/client_secret.json`(데스크톱 앱 OAuth 클라이언트)은 저장소에 올리지 않는다. 설치 파일을 만들 때 함께 들어간다.
 
+## SoneFM 플랫폼 연동 (2026-11-15 사용자 결정)
+- 업무자동화 플랫폼(`sonefm-platform`)이 이 프로그램을 명령줄로 부른다. 규칙은 상위 폴더 `APP_CONTRACT.md`(계약 v1).
+- 명령줄: `make-video`(제목·설명·썸네일·출력 위치를 인자로), 결과 JSON, 종료 코드 0 성공 / 2 일부 건너뜀 / 1 실패. 썸네일이 없어 건너뛰면 0이 아니다.
+- 명령줄의 유튜브 업로드는 **기본 꺼짐**. 방송국 공용 계정 + Google 앱 심사 통과 후에만 켠다. 그 전에는 mp4와 제목·설명 파일만 만들고 사람이 올린다. 화면의 [유튜브에 올리기]는 그대로 둔다.
+
 ## 디자인
 디자인 파일: `design\DESIGN.md`, `design\youtube-editor-design\` (mockup.html, design-notes.md, 화면 이미지, 아이콘)
 
@@ -77,4 +82,5 @@
 - [x] 자동 흐름 테스트: 열기→썸네일→분석→재생→영상 만들기→작업 기록, 분석/영상 취소
 - [x] 메모리 절약: 분석 최대 메모리 6.0GB → 0.87GB, 시간 동일(약 27초), 결과 원본과 동일 (56·57화 대조)
 - [ ] 유튜브 업로드: 코드·가짜 서버 테스트(`tests/test_youtube.py`) 완료. Google Cloud 설정 파일을 받은 뒤 실제 업로드 확인 필요
+- [x] 플랫폼용 명령줄(계약 v1): `make-video`, `sonefm-app.json`, `tests/test_cli.py` (v1.1)
 - [x] 설치 파일 제작: `dist\installer\SoneFM-YoutubeEditor-Setup-1.0.exe` (111MB, GitHub Releases v1.0 공개: https://github.com/Namjooseung/radio2yt/releases/tag/v1.0). 다시 만들기: `packaging\build.ps1`. 관리자 권한 없이 설치 가능, ffmpeg·모델 포함(인터넷 불필요). 설치→점검(--selftest)→제거 확인

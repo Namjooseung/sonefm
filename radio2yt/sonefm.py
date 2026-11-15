@@ -2,6 +2,7 @@
 
     SoneFMEditor.exe                     프로그램 실행
     SoneFMEditor.exe --selftest 파일.mp3   화면 없이 엔진 점검 (결과는 사용자 폴더의 selftest.txt)
+    SoneFMEditor.exe --cli make-video --input 입력.json --result 결과.json   플랫폼용 명령줄
 """
 import sys
 
@@ -42,6 +43,9 @@ def selftest(path: str) -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--cli"]:   # 플랫폼용 명령줄 (radio2yt.py와 같음, APP_CONTRACT.md)
+        from radio2yt import main as cli_main
+        sys.exit(cli_main(sys.argv[2:]))
     if len(sys.argv) >= 3 and sys.argv[1] == "--selftest":
         sys.exit(selftest(sys.argv[2]))
     from app.main import main

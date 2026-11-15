@@ -24,22 +24,23 @@ mp3 ──분석(말/음악 구분, ONNX)──> 자를 구간 결정 ──> �
 
 ## 호출 방법
 
-### 1. 명령줄 (플랫폼에서 부르기에 가장 쉬움)
+### 1. 명령줄 (플랫폼용, 앱 계약 v1)
+
+상위 폴더 [APP_CONTRACT.md](../APP_CONTRACT.md) 규칙을 따른다. 명령·입력·출력 목록은 [sonefm-app.json](sonefm-app.json)이 기준이다.
 
 ```
-cd c:\DEV\Project\SoneFM\radio2yt
-.venv\Scripts\python radio2yt.py <파일.mp3 | 폴더> [--thumb 이미지] [-o 결과폴더] [--dry-run]
+.venv\Scripts\python radio2yt.py make-video --input 입력.json --result 결과.json      # 개발 (cwd = radio2yt)
+SoneFMEditor.exe --cli make-video --input 입력.json --result 결과.json                # 설치판
+.venv\Scripts\python radio2yt.py <파일.mp3 | 폴더> [--thumb] [-o] [--dry-run] [--title] [--description] [--result]   # 사람용
 ```
 
-- **입력:** 오디오 파일 하나, 또는 폴더(안의 `.mp3 .wav .m4a .aac .flac .ogg` 전부를 처리).
-- **썸네일:** `--thumb`(파일 하나일 때만). 없으면 같은 이름의 이미지(`ep01.jpg` 등)를 쓰고, 폴더에 이미지가 하나뿐이면 그것을 쓴다. 썸네일을 못 찾으면 그 파일은 건너뛴다(`--dry-run`이면 썸네일 없이 진행).
-- **결과 (`-o`, 기본 `output\`):**
-  - `<이름>.mp4`: 결과 영상(`--dry-run`이면 만들지 않음)
-  - `<이름>_cuts.txt`: 잘라낸 구간, 남긴 짧은 음악, 최종 길이, 원본 분석 구간 전체
-- **주의:**
-  - 썸네일이 없어 **건너뛴 파일이 있어도 종료 코드는 0**이다. 0이 아닌 경우는 입력 경로가 없거나 폴더에 오디오가 없을 때, 그리고 분석·ffmpeg 오류로 멈췄을 때(뒤 파일은 처리 안 됨)뿐이다. 성공 여부는 마지막 줄 `N/M개 처리 완료.`와 mp4가 생겼는지로 판단한다.
-  - 한글을 출력한다. 다른 프로세스에서 출력을 읽을 때는 `PYTHONIOENCODING=utf-8`을 넣어야 글자가 깨지지 않는다.
-  - 유튜브 업로드는 명령줄에 없다.
+- **입력(`make-video`):** `audio`(파일 또는 폴더, 폴더면 안의 `.mp3 .wav .m4a .aac .flac .ogg` 전부), `thumb`, `out_dir`(기본 `output\`), `title`, `description`, `dry_run`, `upload`(기본 꺼짐).
+- **썸네일:** `thumb`이 없으면 같은 이름의 이미지(`ep01.jpg` 등), 폴더에 이미지가 하나뿐이면 그것. 못 찾으면 그 파일은 `skipped`(이유 포함).
+- **결과 파일 (`out_dir`):** `<이름>.mp4`(만드는 동안은 `<이름>.part.mp4`), `<이름>_cuts.txt`(잘라낸 구간 등), `title`을 주면 `<이름>_youtube.txt`(제목·설명, 사람이 직접 올릴 때 복사용).
+- **결과 JSON:** `--result` 파일 + 표준출력 마지막 줄. `data`: `mp4`, `videos[{source, mp4, url}]`, `title`, `description`, `out_dir`.
+- **종료 코드:** 0 전부 성공 / 2 일부 건너뜀 / 1 하나도 못 만듦(입력 없음, 썸네일 없음, 오류). 한 파일이 오류여도 다음 파일은 계속 처리한다.
+- **진행 로그·진행률**은 표준에러(`@progress 35 음악 구간 분석 중`). 다른 프로세스에서 읽을 때는 `PYTHONIOENCODING=utf-8`.
+- **유튜브 업로드:** `upload: true`(사람용 `--upload`)를 줄 때만 시도한다. `assets\client_secret.json`과 로그인 정보가 없으면 업로드만 `skipped`로 남기고 영상은 정상 처리(종료 코드 2). **방송국 공용 계정으로 로그인하고 Google 앱 심사(audit)를 통과한 뒤에만 켠다.** 그 전에는 플랫폼이 mp4와 제목·설명만 만들고 사람이 올린다.
 
 ### 2. 엔진 점검 (`--selftest`)
 
@@ -119,3 +120,4 @@ SoneFMEditor.exe [파일.mp3]                 # 설치판
 - 56화 21:57~22:21 구간(24초 음악)을 잘라도 되는지 사용자 확인 대기
 - 실제 기본 썸네일로 교체(지금은 임시 1장)
 - 여러 회차 한 번에 처리: 화면에는 없고 명령줄로만 가능
+- 명령줄을 앱 계약 v1에 맞춤(v1.1, 2026-11-15): `make-video`, 결과 JSON, 종료 코드 0/2/1, 업로드 기본 꺼짐

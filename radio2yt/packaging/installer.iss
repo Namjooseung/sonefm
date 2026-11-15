@@ -36,6 +36,7 @@ Name: "desktopicon"; Description: "바탕화면에 바로가기 만들기"; Grou
 
 [Files]
 Source: "..\dist\SoneFMEditor\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\sonefm-app.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"
