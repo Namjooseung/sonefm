@@ -33,7 +33,10 @@ STAGES = {"decode": (0.0, 0.1), "analyze": (0.1, 0.6), "refine": (0.6, 0.7)}
 
 def log(msg: str) -> None:
     if sys.stderr is not None:   # 콘솔 없는 exe에서는 표준에러가 없을 수 있다
-        print(msg, file=sys.stderr, flush=True)
+        try:
+            print(msg, file=sys.stderr, flush=True)
+        except (OSError, ValueError):
+            pass   # 화면용 exe에서 처리 안 된 예외는 오류 창을 띄우고 멈춘다 → 로그 실패는 삼킨다
 
 
 def fmt(t: float) -> str:
@@ -182,13 +185,20 @@ def emit(res: dict[str, Any], result_path: str | None) -> int:
     if result_path:
         Path(result_path).write_text(line, encoding="utf-8")
     if sys.stdout is not None:
-        sys.stdout.write(line + "\n")
-        sys.stdout.flush()
+        try:
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+        except (OSError, ValueError):
+            pass
     log(res["message"])
     return EXIT[res["status"]]
 
 
 def main(argv: list[str] | None = None) -> int:
+    # 설치판 exe는 PYTHONIOENCODING을 무시하고 cp949로 연다 → 한글·기호가 깨지거나 오류 나지 않게 맞춘다
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["make-video"]:
         p = argparse.ArgumentParser(prog="radio2yt make-video")
