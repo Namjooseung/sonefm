@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     window = webview.create_window(
         APP_NAME, url, js_api=Api(started.config),
         width=1440, height=900, min_size=(1100, 700),
+        maximized=True,  # 크기는 물리 픽셀로 쓰여 화면 배율 125~150%에서 창이 작아 보이므로 최대화
     )
 
     def on_loaded() -> None:
