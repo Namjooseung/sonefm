@@ -10,7 +10,7 @@ const MENUS = [
   { key: 'programs', label: '프로그램', view: ProgramsView },
   { key: 'settings', label: '설정', view: SettingsView },
 ]
-const LATER = ['방송일지', '보고서', '유튜브']
+const LATER = ['보고서', '유튜브']
 
 const current = ref('schedule')
 </script>

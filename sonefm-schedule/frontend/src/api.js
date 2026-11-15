@@ -64,6 +64,7 @@ export const excelAnalyze = (path) => call('excel_analyze', path)
 /** mapping: 엑셀 이름 → { action: map|new|same|skip, program_id, target, category, is_listener_participation } */
 export const excelImport = (path, titles, mapping, overwrite = true) => call('excel_import', path, titles, mapping, overwrite)
 export const excelExport = (year, month) => call('excel_export', year, month)
+export const journalExport = (year, month) => call('journal_export', year, month)
 
 // ── 설정·데이터 파일 ──
 export const settingsGet = () => call('settings_get')

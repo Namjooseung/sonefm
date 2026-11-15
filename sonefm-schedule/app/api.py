@@ -22,6 +22,7 @@ from app.repository import change_log_repo
 from app.services import cell_edit, month_status
 from app.services import data as data_service
 from app.services import excel as excel_service
+from app.services import journal as journal_service
 from app.services import settings as settings_service
 from app.services import programs as program_service
 from app.services import schedule as schedule_service
@@ -197,6 +198,23 @@ class Api:
         if not path.lower().endswith(".xlsx"):
             path += ".xlsx"
         return self._run("excel_export", lambda c: excel_service.export_months(c, [(int(year), int(month))], path))
+
+    def journal_export(self, year: int, month: int) -> dict[str, Any]:
+        """그 달 방송일지(하루 1시트)를 엑셀로 저장 (저장 창). 편성표 그대로."""
+        import webview
+        win = self._window()
+        if win is None:
+            return {"ok": False, "errors": ["저장 창을 열 수 없습니다."]}
+        name = f"방송일지_{int(year)}년_{int(month)}월.xlsx"
+        docs = Path(self._cfg.db_path).parent.parent
+        picked = win.create_file_dialog(webview.SAVE_DIALOG, directory=str(docs), save_filename=name,
+                                        file_types=("엑셀 파일 (*.xlsx)",))
+        if not picked:
+            return {"ok": True, "cancelled": True}
+        path = picked if isinstance(picked, str) else picked[0]
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
+        return self._run("journal_export", lambda c: journal_service.export_journal(c, int(year), int(month), path))
 
     # ── 설정: 운영 기준값·임시공휴일 ──────────────
     def settings_get(self) -> dict[str, Any]:

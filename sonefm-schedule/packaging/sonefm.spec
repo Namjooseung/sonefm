@@ -15,6 +15,7 @@ if not INDEX.exists():
 datas = [
     (str(INDEX), "frontend/dist"),
     (str(ROOT / "app" / "db" / "migrations" / "*.sql"), "app/db/migrations"),
+    (str(ROOT / "app" / "templates" / "journal_template.xlsx"), "app/templates"),   # 방송일지 양식
 ]
 datas += collect_data_files("holidays")          # 공휴일 이름 번역(ko) 파일
 
