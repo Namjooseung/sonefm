@@ -186,6 +186,16 @@ result = gateway.complete(
 - keyring은 테스트에서 메모리 백엔드로 바꾼다(실제 자격 증명 관리자를 건드리지 않음).
 - 실제 API 테스트는 기본 건너뜀. 옵션(예: `pytest --real-ai`)을 줄 때만, keyring에 키가 있을 때만 돈다.
 
+### 4.9 1단계 구현에서 정한 것 (2026-11-15)
+
+- 단가 기본값(USD/백만 토큰, 2026-11 공식 가격): haiku-5-5 입력 0.10·출력 0.50·캐시 쓰기 0.125·캐시 읽기 0.01(요청 10만 토큰 이하 기준), sonnet-5-5 2.00·10.00·2.50·0.10. 저장된 단가가 null이면 기본값을 쓰고, 기본값이 없는 모델(모델 ID를 바꾼 경우)만 단가 미설정으로 막는다.
+- 등급별 effort 설정 `ai.effort` {light: low, heavy: medium}. thinking·temperature는 보내지 않는다(모델 기본 adaptive). 화면에는 노출하지 않음.
+- off·budget처럼 공급자 호출 전에 막힌 것은 `ai_calls`에 기록하지 않는다. 재시도가 있으면 두 호출의 토큰·비용을 합쳐 한 행.
+- JSON 스키마 검증은 새 의존성 없이 부분 집합(type, properties, required, additionalProperties:false, enum, items, minimum/maximum)만 직접 구현. 다른 키워드는 개발 중 오류.
+- ClaudeProvider는 키를 생성자에만 넘기고, 생성 중 `ANTHROPIC_*` 환경 변수를 잠시 치워 SDK가 환경의 주소·헤더를 쓰지 못하게 한다. anthropic 2.8.0은 API 키를 `Authorization: Bearer`로 보낸다(SDK 동작). 실제 서버 인증은 `pytest --real-ai`로 처음 확인한다.
+- 로그에는 공급자 예외의 클래스 이름·상태 코드만. `anthropic` 로거는 WARNING.
+- 서버측 fallbacks, structured outputs(`output_config.format`), 스트리밍은 쓰지 않는다. 계획 JSON 첫 시도 성공률을 2단계에서 재 보고 필요하면 structured outputs를 검토한다.
+
 ## 5. 문서 처리 위치 [확정 A]
 
 | | 별도 앱 `sonefm-docs` | 플랫폼 내부 모듈 |
