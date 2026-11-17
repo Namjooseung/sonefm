@@ -23,7 +23,7 @@ def export_journal(conn: sqlite3.Connection, year: int, month: int, path: str) -
     last = date(year, month, calendar.monthrange(year, month)[1])
     display = schedule_repo.program_display(conn)
     cells = {k: (text, display.get(pid, {}).get("category"))
-             for k, (text, _marked, _band, pid) in _cell_texts(conn, first, last).items()}
+             for k, (text, _marked, _band, pid, _xl) in _cell_texts(conn, first, last).items()}
     journal = journal_days(year, month, cells)
     try:
         write_journal(journal, template_path(), path)

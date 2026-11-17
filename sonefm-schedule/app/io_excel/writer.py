@@ -4,7 +4,8 @@
 - B1:D1 병합: 그 달 1일 (표시 형식 '2026년 11월')
 - 주마다 머리글 1줄 + 06~22시 17줄. A열 = 'M-주차' / 'HH:00~HH:57', B~H = 월~일
 - 고정 편성 줄(굿모닝!/굿바이!)은 B~H를 병합하고 비워 둔다
-- 재방 칸은 연노랑 배경
+- 칸 배경: 오락 프로그램은 청록, 그 밖의 재방은 연노랑 / 새 본방 글자는 붉은색
+- 글꼴·열 너비·행 높이는 기존 엑셀 편성표(2026년 편성표_v2, 2610 시트)와 같다
 """
 from __future__ import annotations
 
@@ -19,6 +20,8 @@ _THIN = Side(style="thin")
 BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
 FILL_HEADER = PatternFill("solid", fgColor="FF9FC5E8")
 FILL_RERUN = PatternFill("solid", fgColor="FFFFF2CC")
+FILL_ENTERTAINMENT = PatternFill("solid", fgColor="FFA2C4C9")
+FILLS = {"rerun": FILL_RERUN, "entertainment": FILL_ENTERTAINMENT}
 CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
 LEFT = Alignment(vertical="center", wrap_text=True)
 
@@ -26,16 +29,26 @@ FONT_TITLE = Font(name="Arial", size=32)
 FONT_WEEK = Font(name="Calibri", size=19, bold=True)
 FONT_TIME = Font(name="Malgun Gothic", size=12, bold=True)
 FONT_CELL = Font(name="Gulim", size=12, bold=True)
+FONT_CELL_RED = Font(name="Gulim", size=12, bold=True, color="FFFF0000")
 
-COL_WIDTHS = {"A": 16.4, "B": 35, "C": 35.5, "D": 35, "E": 37, "F": 37, "G": 34, "H": 39}
-HEIGHT_TITLE, HEIGHT_WEEK, HEIGHT_BAND, HEIGHT_CELL = 64.5, 35.25, 34.5, 41.25
+COL_WIDTHS = {"A": 16.38, "B": 35, "C": 35.5, "D": 33.13, "E": 37, "F": 36.88, "G": 33.63, "H": 38.88}
+HEIGHT_TITLE, HEIGHT_WEEK, HEIGHT_CELL = 64.5, 35.25, 41.25
+HEIGHT_BAND = {6: 34.5, 22: 36.0}   # 굿모닝!·굿바이! 띠 (그 밖의 시각이 띠면 34.5)
+
+
+@dataclass
+class XlCell:
+    text: str = ""
+    rerun: bool = False          # 재방 표시((재))가 붙은 칸
+    fill: str | None = None      # None | 'rerun'(연노랑) | 'entertainment'(청록) — None이고 rerun이면 연노랑
+    red: bool = False            # 붉은 글자(새 본방)
 
 
 @dataclass
 class WeekBlock:
     label: str                                    # '11-45'
     days: list[int]                               # 일(日) 7개
-    rows: dict[int, list[tuple[str, bool]]] = field(default_factory=dict)   # 시 → [(글자, 재방 여부)] × 7
+    rows: dict[int, list[XlCell | tuple[str, bool]]] = field(default_factory=dict)   # 시 → [XlCell] × 7 (예전 (글자, 재방 여부) 튜플도 받는다)
     bands: set[int] = field(default_factory=set)  # 병합해서 비울 시각 (고정 편성)
 
 
@@ -74,16 +87,19 @@ def write_months(sheets: list[MonthSheet], path: str | Path) -> None:
                 t = ws.cell(r, 1, _time_label(h))
                 t.font, t.alignment, t.border = FONT_TIME, CENTER, BORDER
                 if h in wk.bands:
-                    ws.row_dimensions[r].height = HEIGHT_BAND
+                    ws.row_dimensions[r].height = HEIGHT_BAND.get(h, 34.5)
                     for col in range(2, 9):
                         ws.cell(r, col).border = BORDER
                     ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=8)
                 else:
                     ws.row_dimensions[r].height = HEIGHT_CELL
-                    for col, (text, rerun) in enumerate(wk.rows.get(h, [("", False)] * 7), start=2):
-                        cell = ws.cell(r, col, text or None)
-                        cell.font, cell.alignment, cell.border = FONT_CELL, LEFT, BORDER
-                        if rerun:
-                            cell.fill = FILL_RERUN
+                    for col, xc in enumerate(wk.rows.get(h, [XlCell()] * 7), start=2):
+                        xc = xc if isinstance(xc, XlCell) else XlCell(*xc)
+                        cell = ws.cell(r, col, xc.text or None)
+                        cell.font = FONT_CELL_RED if xc.red else FONT_CELL
+                        cell.alignment, cell.border = LEFT, BORDER
+                        kind = xc.fill or ("rerun" if xc.rerun else None)
+                        if kind:
+                            cell.fill = FILLS[kind]
                 r += 1
     wb.save(path)

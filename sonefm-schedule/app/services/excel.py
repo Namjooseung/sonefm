@@ -22,7 +22,8 @@ from app.domain.episodes import compute_episodes
 from app.domain.excel_text import format_cell_text, infer_slots, match_names, normalize_name, parse_cell_text
 from app.domain.weeks import iso_week, month_of_week, week_dates
 from app.io_excel.reader import Sheet, read_workbook
-from app.io_excel.writer import MonthSheet, WeekBlock, write_months
+from app.domain.excel_style import cell_fill, is_red_text
+from app.io_excel.writer import MonthSheet, WeekBlock, XlCell, write_months
 from app.repository import change_log_repo, programs_repo, schedule_repo, settings_repo
 from app.services import programs as program_service
 from app.services.schedule import _episode_map, rerun_mark_map
@@ -392,8 +393,8 @@ def _diff_episodes(conn: sqlite3.Connection, excel_ep: dict[Key, tuple[str, int 
 
 # ── 3. 내보내기 ───────────────────────────────────
 
-def _cell_texts(conn: sqlite3.Connection, first: date, last: date) -> dict[Key, tuple[str, bool, bool, str]]:
-    """(날짜, 시) → (엑셀 글자, 재방 표시 여부, 고정 편성 그대로인지, 프로그램 id)."""
+def _cell_texts(conn: sqlite3.Connection, first: date, last: date) -> dict[Key, tuple[str, bool, bool, str, XlCell]]:
+    """(날짜, 시) → (엑셀 글자, 재방 표시 여부, 고정 편성 그대로인지, 프로그램 id, 서식 칸)."""
     episodes = _episode_map(conn, last)
     marks = rerun_mark_map(conn, first, last)
     display = schedule_repo.program_display(conn)
@@ -401,14 +402,17 @@ def _cell_texts(conn: sqlite3.Connection, first: date, last: date) -> dict[Key, 
     out = {}
     for r in schedule_repo.cell_rows_between(conn, first, last):
         d = date.fromisoformat(r["date"])
-        p = display.get(r["program_id"], {"name": "?", "show_episode": True, "is_special": False})
+        p = display.get(r["program_id"], {"name": "?", "category": None, "show_episode": True, "is_special": False})
         info = episodes.get((d, r["hour"]))
         show = p["show_episode"] and not p["is_special"] and r["program_id"] not in fixed
         # 본방 자리에 나가는 재방은 (재)를 붙이지 않는다 (기존 엑셀과 같은 방식)
         marked = r["kind"] == "재방" and marks.get((d, r["hour"]), True)
         text = format_cell_text(p["name"], "재방" if marked else "본방", info.episode if info else None, show)
         is_band = r["program_id"] in fixed and r["source"] != "manual"
-        out[(d, r["hour"])] = (text, marked, is_band, r["program_id"])
+        is_fixed = r["program_id"] in fixed
+        xl = XlCell(text, marked, None if is_fixed else cell_fill(p.get("category"), marked),
+                    is_red_text(r["kind"], p["show_episode"], p["is_special"], is_fixed))
+        out[(d, r["hour"])] = (text, marked, is_band, r["program_id"], xl)
     return out
 
 
@@ -430,7 +434,7 @@ def build_month_sheet(conn: sqlite3.Connection, year: int, month: int) -> MonthS
             if all(c and c[2] and c[3] == row[0][3] for c in row):
                 wk.bands.add(h)
             else:
-                wk.rows[h] = [(c[0], c[1]) if c else ("", False) for c in row]
+                wk.rows[h] = [c[4] if c else XlCell() for c in row]
         blocks.append(wk)
     return MonthSheet(title=f"{year % 100:02d}{month:02d}", first_day=first, weeks=blocks)
 
