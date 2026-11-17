@@ -113,10 +113,10 @@ class AutoExporter:
     def status(self) -> dict[str, Any]:
         """설정 화면용: 켜짐 여부, 폴더, 마지막 시각·결과."""
         out: dict[str, Any] = {"enabled": cfg_enabled(self._cfg),
-                               "folder": self._cfg.auto_export_dir, "at": None, "ok": None, "message": ""}
+                               "folder": self._cfg.auto_export_dir, "last_at": None, "last_ok": None, "last_message": ""}
         try:
             raw = json.loads(self._status_path().read_text(encoding="utf-8"))
-            out.update(at=raw.get("at"), ok=raw.get("ok"), message=raw.get("message", ""))
+            out.update(last_at=raw.get("at"), last_ok=raw.get("ok"), last_message=raw.get("message", ""))
         except (OSError, ValueError):
             pass
         return out

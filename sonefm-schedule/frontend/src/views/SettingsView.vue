@@ -8,7 +8,8 @@ import ImportWizard from '../components/ImportWizard.vue'
 const info = ref(null)          // 앱 버전·스키마
 const data = ref(null)          // DB 경로·백업
 const rules = ref(null)
-const autoExport = ref(null)   // { enabled, folder, at, ok, message }
+const autoExport = ref(null)   // { enabled, folder, last_at, last_ok, last_message }
+const autoExportError = ref('')
 const programs = ref([])
 const notice = ref('')
 const noticeError = ref(false)
@@ -26,7 +27,8 @@ function flash(msg, error = false) {
 async function loadAll() {
   const [p, d, r, l, ae] = await Promise.all([api.ping(), api.dataInfo(), api.settingsGet(), api.listPrograms('', true), api.autoExportStatus()])
   info.value = p
-  if (ae.ok) autoExport.value = ae
+  if (ae.ok) { autoExport.value = ae; autoExportError.value = '' }
+  else autoExportError.value = (ae.errors && ae.errors[0]) || '상태를 읽지 못했습니다.'
   if (d.ok) data.value = d
   if (r.ok) rules.value = { ...r, fixed_program_ids: r.fixed_programs.map((x) => x.id), music_program_ids: r.music_programs.map((x) => x.id) }
   if (l.ok) programs.value = l.items
@@ -229,10 +231,11 @@ onActivated(loadAll)
     </div>
 
     <!-- 드라이브 자동 내보내기 -->
-    <div v-if="autoExport" class="card body">
+    <div class="card body">
       <h2>드라이브 폴더 (보내기·가져오기)</h2>
       <p class="muted small">보내기와 가져오기가 같은 구글 드라이브 폴더를 씁니다. 편성 담당 PC는 "자동 내보내기"를 켜서 편성을 바꿀 때마다 사본(SoneFM편성표_데이터.db)을 올리고(마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때, 켤 때), 다른 PC는 "드라이브에서 가져오기"로 최신 편성을 받습니다. 공유 폴더는 드라이브에서 "바로가기 추가 → 내 드라이브"를 해야 이 PC에 보입니다.</p>
-      <dl>
+      <p v-if="autoExportError" class="danger-text">드라이브 폴더 상태를 읽지 못했습니다: {{ autoExportError }} 프로그램을 다시 켜 보고, 계속되면 담당자에게 알려 주세요.</p>
+      <dl v-if="autoExport">
         <dt>폴더</dt>
         <dd>
           <span v-if="autoExport.folder">{{ autoExport.folder }}</span>
@@ -253,9 +256,9 @@ onActivated(loadAll)
         </dd>
         <template v-if="autoExport.enabled">
           <dt>마지막 결과</dt>
-          <dd v-if="!autoExport.at" class="muted">아직 내보낸 적이 없습니다.</dd>
-          <dd v-else-if="autoExport.ok">{{ autoExport.at }} 성공</dd>
-          <dd v-else class="danger-text">{{ autoExport.at }} 실패: {{ autoExport.message }}</dd>
+          <dd v-if="!autoExport.last_at" class="muted">아직 내보낸 적이 없습니다.</dd>
+          <dd v-else-if="autoExport.last_ok">{{ autoExport.last_at }} 성공</dd>
+          <dd v-else class="danger-text">{{ autoExport.last_at }} 실패: {{ autoExport.last_message }}</dd>
         </template>
       </dl>
       <p v-if="driveWarn" class="danger-text">{{ driveWarn }}</p>

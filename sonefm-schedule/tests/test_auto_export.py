@@ -78,11 +78,25 @@ def test_폴더가_없으면_실패_상태만_남김(tmp_path):
     result = api.exporter.export_now()
     assert result["ok"] is False
     st = api.exporter.status()
-    assert st["ok"] is False and "드라이브" in st["message"]
+    assert st["last_ok"] is False and "드라이브" in st["last_message"]
     assert not (tmp_path / "없는폴더").exists()   # 폴더를 만들지 않는다
     # 화면에서 없는 폴더를 고르면 설정은 바뀌지 않는다
     r = api.drive_folder_set(str(tmp_path / "또없음"))
     assert r["ok"] is False
+
+
+def test_새_PC_상태는_ok_True(tmp_path):
+    api = _api("")
+    r = api.auto_export_status()   # 상태 파일 없음: 마지막 결과 키가 ok를 덮으면 화면 카드가 사라진다
+    assert r["ok"] is True and r["last_ok"] is None and r["last_at"] is None
+
+
+def test_지난번_내보내기_실패_기록이_있어도_ok_True(tmp_path):
+    api = _api("")
+    api._cfg.auto_export_dir = str(tmp_path / "없는폴더")
+    api.exporter.export_now()
+    r = api.auto_export_status()
+    assert r["ok"] is True and r["last_ok"] is False and r["last_message"]
 
 
 def test_폴더를_비우면_꺼짐(tmp_path):
