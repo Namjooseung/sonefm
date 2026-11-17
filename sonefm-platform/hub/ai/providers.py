@@ -27,7 +27,13 @@ class ProviderNetworkError(ProviderError):
 
 
 class ProviderFormatError(ProviderError):
-    """거절·잘림처럼 응답을 쓸 수 없는 경우. 인자는 사용자에게 그대로 보이는 한국어 메시지."""
+    """거절·잘림처럼 응답을 쓸 수 없는 경우. 인자는 사용자에게 그대로 보이는 한국어 메시지.
+
+    usage: 이미 쓴 토큰 (입력, 출력, 캐시 읽기, 캐시 쓰기). 응답을 못 써도 비용은 나갔으므로 게이트웨이가 합산한다."""
+
+    def __init__(self, message: str = "", usage: tuple[int, int, int, int] = (0, 0, 0, 0)):
+        super().__init__(message)
+        self.usage = usage
 
 
 class Provider(Protocol):

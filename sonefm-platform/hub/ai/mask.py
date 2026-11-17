@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 
+MIN_NAME_LEN = 2
 KINDS = (("phone", "전화"), ("rrn", "주민번호"), ("account", "계좌"), ("email", "이메일"), ("name", "이름"))
 
 _EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
@@ -27,7 +28,9 @@ def mask(text: str, names: list[str] | None = None) -> tuple[str, dict[str, int]
         return pattern.sub(lambda m: token(kind, m.group()) if ok(m.group()) else m.group(), s)
 
     out = sub("email", _EMAIL, text)
-    ns = sorted({n.strip() for n in (names or []) if n and n.strip()}, key=len, reverse=True)
+    # 1글자 이름은 부분 문자열로 문장을 망가뜨리므로 무시한다(설정 저장에서도 거절)
+    ns = sorted({n.strip() for n in (names or []) if n and len("".join(n.split())) >= MIN_NAME_LEN}, key=len,
+                reverse=True)
     if ns:
         out = sub("name", re.compile("|".join(re.escape(n) for n in ns)), out)
     out = sub("rrn", _RRN, out)

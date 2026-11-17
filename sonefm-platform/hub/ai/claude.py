@@ -18,7 +18,9 @@ from hub.ai.providers import (ProviderAuthError, ProviderError, ProviderFormatEr
 
 log = logging.getLogger("hub.ai")
 BASE_URL = "https://api.anthropic.com"
-TIMEOUT_S = 120.0
+TIMEOUT_S = 120.0          # 읽기(응답 기다림)
+CONNECT_TIMEOUT_S = 10.0   # 연결. 네트워크가 끊겼을 때 오래 붙잡지 않게
+MAX_RETRIES = 1
 _ENV_LOCK = threading.Lock()
 logging.getLogger("anthropic").setLevel(logging.WARNING)   # SDK의 디버그 로그가 예외 문구(키 포함 가능)를 찍지 못하게
 
@@ -31,7 +33,8 @@ def _make_client(api_key: str, http_client: Any = None) -> anthropic.Anthropic:
         for k in saved:
             del os.environ[k]
         try:
-            return anthropic.Anthropic(api_key=api_key, base_url=BASE_URL, max_retries=2, timeout=TIMEOUT_S,
+            return anthropic.Anthropic(api_key=api_key, base_url=BASE_URL, max_retries=MAX_RETRIES,
+                                       timeout=anthropic.Timeout(TIMEOUT_S, connect=CONNECT_TIMEOUT_S),
                                        http_client=http_client)
         finally:
             os.environ.update(saved)
@@ -63,15 +66,16 @@ class ClaudeProvider:
             resp = self._client.messages.create(**kw)
         except anthropic.APIError as e:
             raise _convert(e) from None
-        if resp.stop_reason == "refusal":
-            raise ProviderFormatError("AI가 이 요청을 처리하지 않았습니다. 내용을 바꿔 다시 시도해 주세요.")
-        if resp.stop_reason == "max_tokens":
-            raise ProviderFormatError("AI 응답이 길어 잘렸습니다. 요청을 나누어 다시 시도해 주세요.")
         u = resp.usage
+        used = (u.input_tokens or 0, u.output_tokens or 0, u.cache_read_input_tokens or 0,
+                u.cache_creation_input_tokens or 0)
+        if resp.stop_reason == "refusal":   # 응답은 못 쓰지만 토큰은 이미 썼다 → usage를 실어 보낸다
+            raise ProviderFormatError("AI가 이 요청을 처리하지 않았습니다. 내용을 바꿔 다시 시도해 주세요.", used)
+        if resp.stop_reason == "max_tokens":
+            raise ProviderFormatError("AI 응답이 길어 잘렸습니다. 요청을 나누어 다시 시도해 주세요.", used)
         return ProviderReply(
             text="".join(b.text for b in resp.content if b.type == "text"),
-            input_tokens=u.input_tokens or 0, output_tokens=u.output_tokens or 0,
-            cache_read_tokens=u.cache_read_input_tokens or 0, cache_write_tokens=u.cache_creation_input_tokens or 0)
+            input_tokens=used[0], output_tokens=used[1], cache_read_tokens=used[2], cache_write_tokens=used[3])
 
 
 def _convert(e: anthropic.APIError) -> ProviderError:

@@ -7,6 +7,7 @@ from typing import Any
 
 from hub import db
 from hub.ai import keys
+from hub.ai.mask import MIN_NAME_LEN
 from hub.paths import load_config, save_config
 
 EFFORTS = ("low", "medium", "high")
@@ -51,6 +52,11 @@ def save(ai: dict[str, Any]) -> None:
     names = masking.get("names") or []
     if isinstance(names, str):
         names = names.splitlines()
+    names = [str(n).strip() for n in names if str(n).strip()]
+    for n in names:
+        if len("".join(n.split())) < MIN_NAME_LEN:
+            raise ValueError(f"가릴 이름 '{n}'이(가) 너무 짧습니다. 이름은 공백을 뺀 2글자 이상으로 입력해 주세요. "
+                             "(1글자 이름은 다른 낱말까지 가려서 문장이 망가집니다.)")
     effort = {t: str((ai.get("effort") or {}).get(t, old["effort"][t])) for t in ("light", "heavy")}
     for t, v in effort.items():
         if v not in EFFORTS:
@@ -60,7 +66,7 @@ def save(ai: dict[str, Any]) -> None:
                  "limits": {"daily_usd": _num(lim.get("daily_usd"), "하루 한도"),
                             "monthly_usd": _num(lim.get("monthly_usd"), "한 달 한도")},
                  "masking": {"enabled": bool(masking.get("enabled")),
-                             "names": [n.strip() for n in names if str(n).strip()]}}
+                             "names": names}}
     save_config(cfg)
 
 

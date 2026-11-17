@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -103,6 +104,43 @@ def _dev_log(feature: str, model: str, system: Any, messages: list[dict], reply:
         log.warning("AI 개발 모드 기록 실패(%s)", type(e).__name__)
 
 
+# DB에 못 쓴 호출 기록. 한도 계산에는 계속 더하고, 다음 호출 때 DB 기록을 다시 시도한다(프로세스 메모리만).
+_pending: list[dict[str, Any]] = []
+_pending_lock = threading.Lock()
+RECORD_RETRY_WAIT_S = 0.2
+
+
+def _record(fields: dict[str, Any]) -> None:
+    """호출 기록 쓰기. 실패하면 한 번 더, 그래도 안 되면 메모리에 보관(응답은 그대로 돌려준다)."""
+    for attempt in (0, 1):
+        try:
+            db.record_ai_call(**fields)
+            return
+        except Exception as e:  # noqa: BLE001  원문·키는 로그에 남기지 않는다
+            log.warning("AI 호출 기록 실패(%s) 시도 %d/2", type(e).__name__, attempt + 1)
+            if attempt == 0:
+                time.sleep(RECORD_RETRY_WAIT_S)
+    with _pending_lock:
+        _pending.append(fields)
+    log.error("AI 호출 기록을 DB에 못 써서 메모리에 보관합니다(한도 계산에는 반영). 보관 %d건", len(_pending))
+
+
+def _flush_pending() -> None:
+    with _pending_lock:
+        while _pending:
+            try:
+                db.record_ai_call(**_pending[0])
+            except Exception as e:  # noqa: BLE001
+                log.warning("보관한 AI 호출 기록 재시도 실패(%s)", type(e).__name__)
+                return
+            _pending.pop(0)
+
+
+def _pending_cost(start: str, end: str) -> float:
+    with _pending_lock:
+        return sum(p["cost_usd"] for p in _pending if start <= p["at"] < end)
+
+
 def _no_key() -> None:
     return None
 
@@ -159,13 +197,10 @@ class Gateway:
         finally:
             ms = int((time.monotonic() - started) * 1000)
             cost = cost_usd(price, *usage)
-            try:
-                db.record_ai_call(feature=feature, tier=tier, model=model, input_tokens=usage[0],
-                                  output_tokens=usage[1], cache_read_tokens=usage[2], cache_write_tokens=usage[3],
-                                  cost_usd=cost, duration_ms=ms, ok=error_kind is None, error_kind=error_kind,
-                                  retried=state["retried"], masked=masked)
-            except Exception:
-                log.exception("AI 호출 기록 실패")
+            _record({"feature": feature, "tier": tier, "model": model, "input_tokens": usage[0],
+                     "output_tokens": usage[1], "cache_read_tokens": usage[2], "cache_write_tokens": usage[3],
+                     "cost_usd": cost, "duration_ms": ms, "ok": error_kind is None, "error_kind": error_kind,
+                     "retried": state["retried"], "masked": masked, "at": db.now()})
         return AIResult(text, data, model, *usage, cost, ms, masked)
 
     def _call(self, provider, model, system, messages, tools, max_tokens, schema, usage, state, effort=None, dev=None):
@@ -177,6 +212,8 @@ class Gateway:
             except ProviderNetworkError as e:
                 raise AIError("network", str(e) or None) from None
             except ProviderFormatError as e:
+                for i, v in enumerate(e.usage):   # 거절·잘림도 토큰은 이미 썼다
+                    usage[i] += v
                 raise AIError("format", str(e) or None) from None
             except ProviderError:
                 raise AIError("internal") from None   # 공급자가 이미 상태 코드만 로그에 남겼다
@@ -219,7 +256,8 @@ class Gateway:
             limit = limits.get(key)
             if limit is None:
                 continue
-            used = db.ai_cost_sum(start, end)
+            _flush_pending()
+            used = db.ai_cost_sum(start, end) + _pending_cost(start, end)
             if used >= limit:
                 raise AIError("budget", f"AI 사용 한도({label} {limit:g}달러)를 넘었습니다. 지금까지 {used:.4f}달러를 "
                                         f"썼고 {release}. 급하면 설정에서 한도를 올려 주세요.")
