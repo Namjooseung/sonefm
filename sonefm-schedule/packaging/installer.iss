@@ -7,7 +7,7 @@
 ; - AppId 고정: 새 버전을 같은 설치 파일로 덮어 설치하면 업데이트된다.
 
 #define AppName "SoneFM 편성표"
-#define AppVersion "1.1.0"
+#define AppVersion "1.2.0"
 #define AppExe "SoneFM.exe"
 
 [Setup]
