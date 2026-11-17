@@ -4,6 +4,7 @@
     python app/main.py --cli month --year 2026 --month 11
     python app/main.py --cli set-prep --date 2026-11-16 --hour 14 --status 송출완료
     python app/main.py --cli check-db --db 받은파일.db
+    python app/main.py --cli programs [--active-on 2026-11-16] [--db 사본.db]
     (플랫폼은 --input 입력.json --result 결과.json 으로 부른다)
 
 결과는 --result 파일과 표준출력 마지막 줄에 JSON 한 줄. 종료 코드 0 성공 / 1 실패.
@@ -23,6 +24,7 @@ from app.config import load_config
 from app.db.connection import open_db
 from app.repository import schedule_repo
 from app.services import cell_edit, data
+from app.services import programs as program_svc
 from app.services import schedule as schedule_svc
 
 EXIT = {"ok": 0, "partial": 2, "error": 1}
@@ -112,7 +114,23 @@ def check_db(args: dict[str, Any]) -> dict[str, Any]:
     return _result("ok", "편성 데이터 파일 확인", {"month_statuses": statuses}, 1)
 
 
-COMMANDS = {"lookup": lookup, "month": month, "set-prep": set_prep, "check-db": check_db}
+def programs(args: dict[str, Any]) -> dict[str, Any]:
+    active_on = args.get("active_on")
+    if active_on:
+        try:
+            active_on = date.fromisoformat(str(active_on)).isoformat()
+        except ValueError:
+            return _error("active_on은 YYYY-MM-DD 형식으로 주세요.")
+    db = _db(args)
+    if db is None or not db.exists():
+        return _error("편성 데이터 파일이 없습니다.")
+    with open_db(db) as conn:
+        items = program_svc.list_for_platform(conn, active_on or None)
+    return _result("ok", f"프로그램 {len(items)}개", {"programs": items}, len(items))
+
+
+COMMANDS = {"lookup": lookup, "month": month, "set-prep": set_prep, "check-db": check_db,
+            "programs": programs}
 
 
 def _emit(result: dict[str, Any], result_path: str | None) -> None:
@@ -136,8 +154,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("command", choices=sorted(COMMANDS))
     p.add_argument("--input", help="입력 JSON 파일")
     p.add_argument("--result", help="결과 JSON을 쓸 파일")
-    for name in ("db", "date", "hour", "year", "month", "status"):
-        p.add_argument(f"--{name}")
+    for name in ("db", "date", "hour", "year", "month", "status", "active_on"):
+        p.add_argument(f"--{name.replace('_', '-')}", dest=name)
     ns = p.parse_args(argv)
 
     args: dict[str, Any] = {}

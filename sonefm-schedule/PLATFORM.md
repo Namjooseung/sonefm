@@ -50,6 +50,7 @@ SoneFM.exe --cli <명령> --input 입력.json --result 결과.json              
 | `lookup` | 날짜·시각 → 프로그램 이름, 회차(`get_month` 계산), 본방/재방, 제목용 `label`, 월 상태 |
 | `month` | `get_month` 결과 전체 |
 | `set-prep` | `prep_status` 변경 (서비스 경유: 마감 잠금·변경 기록) |
+| `programs` | 프로그램 목록(이름순): id, 이름, 별칭, 시작·종료일, 고정 편성·특집 여부. `active_on`을 주면 그날 방영 중인 것만. 읽기만 함 |
 | `check-db` | 받은 편성 데이터 파일 검사 + 이 버전 형식으로 마이그레이션 (**사본에만**) |
 
 - 모두 `db`(편성 데이터 파일 경로)를 받을 수 있고, 없으면 이 PC의 `config.json` DB를 쓴다. 플랫폼은 편성 직원이 내보낸 파일의 **사본**을 넘긴다.

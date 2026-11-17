@@ -83,6 +83,27 @@ def test_set_prep_바꾸고_조회에_반영(tmp_path, db):
     assert code == 1
 
 
+def test_programs(tmp_path, db, monkeypatch):
+    monkeypatch.setenv("SONEFM_HOME", str(tmp_path / "home"))
+    c = connect(db)
+    pid = c.execute("SELECT id FROM programs WHERE name = '마을살이 정류장'").fetchone()[0]
+    c.execute("INSERT INTO program_aliases (id, program_id, alias, created_at, updated_at)"
+              " VALUES ('a1', ?, '정류장', 'x', 'x')", (pid,))
+    c.execute("UPDATE programs SET start_date = '2026-01-05' WHERE id = ?", (pid,))
+    c.commit()
+    c.close()
+    code, r = run(tmp_path, "programs", "--db", str(db))
+    assert code == 0 and r["count"] == len(r["data"]["programs"])
+    p = next(x for x in r["data"]["programs"] if x["name"] == "마을살이 정류장")
+    assert p["name"] == "마을살이 정류장" and p["aliases"] == ["정류장"]
+    assert p["is_fixed"] is False and p["is_special"] is False and p["start_date"] == "2026-01-05"
+    assert set(p) == {"id", "name", "aliases", "start_date", "end_date", "is_fixed", "is_special"}
+    names = lambda d: [x["name"] for x in run(tmp_path, "programs", "--db", str(db), "--active-on", d)[1]["data"]["programs"]]
+    assert "마을살이 정류장" in names("2026-11-16") and "마을살이 정류장" not in names("2025-12-31")
+    code, r = run(tmp_path, "programs", "--db", str(db), "--active-on", "내일")
+    assert code == 1 and "YYYY-MM-DD" in r["message"]
+
+
 def test_check_db(tmp_path, db):
     assert run(tmp_path, "check-db", "--db", str(db))[0] == 0
     bad = tmp_path / "bad.db"

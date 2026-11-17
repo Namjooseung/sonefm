@@ -73,6 +73,14 @@ def name_index(conn: sqlite3.Connection) -> list[tuple[str, str, list[str]]]:
             for pid, name in conn.execute("SELECT id, name FROM programs")]
 
 
+def aliases_by_program(conn: sqlite3.Connection) -> dict[str, list[str]]:
+    """프로그램 id → 별칭 목록 (등록 순)."""
+    out: dict[str, list[str]] = {}
+    for pid, alias in conn.execute("SELECT program_id, alias FROM program_aliases ORDER BY rowid"):
+        out.setdefault(pid, []).append(alias)
+    return out
+
+
 def slot_counts(conn: sqlite3.Connection) -> dict[str, int]:
     """프로그램별 편성 자리 수 (목록 표시용)."""
     return {pid: n for pid, n in conn.execute(

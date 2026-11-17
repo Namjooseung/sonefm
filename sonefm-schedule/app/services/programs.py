@@ -7,7 +7,7 @@ from typing import Any
 
 from app.db.connection import savepoint
 from app.domain import programs as rules
-from app.repository import change_log_repo, programs_repo
+from app.repository import change_log_repo, programs_repo, settings_repo
 
 Result = dict[str, Any]
 
@@ -26,6 +26,24 @@ def list_programs(conn: sqlite3.Connection, query: str = "", include_ended: bool
         p["is_ended"] = bool(p["end_date"] and p["end_date"] < today)
         p["cycle_label"] = rules.CYCLE_TYPES.get(p["cycle_type"], p["cycle_type"])
     return items
+
+
+def list_for_platform(conn: sqlite3.Connection, active_on: str | None = None) -> list[dict[str, Any]]:
+    """플랫폼용 프로그램 이름표 (이름순). active_on(YYYY-MM-DD)을 주면 그날 방영 중인 것만. 읽기 전용."""
+    fixed = set(settings_repo.get(conn, "fixed_program_ids", []))
+    aliases = programs_repo.aliases_by_program(conn)
+    out = []
+    for p in programs_repo.list_programs(conn):
+        if active_on:
+            if p["start_date"] and p["start_date"] > active_on:
+                continue
+            if p["end_date"] and p["end_date"] < active_on:
+                continue
+        out.append({"id": p["id"], "name": p["name"], "aliases": aliases.get(p["id"], []),
+                    "start_date": p["start_date"], "end_date": p["end_date"],
+                    "is_fixed": p["id"] in fixed, "is_special": p["is_special"]})
+    out.sort(key=lambda x: x["name"].casefold())
+    return out
 
 
 def get_program(conn: sqlite3.Connection, program_id: str) -> Result:
