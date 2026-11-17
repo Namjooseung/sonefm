@@ -64,8 +64,9 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         url = index.as_uri()
 
+    api = Api(started.config)
     window = webview.create_window(
-        APP_NAME, url, js_api=Api(started.config),
+        APP_NAME, url, js_api=api,
         width=1440, height=900, min_size=(1100, 700),
         maximized=True,  # 크기는 물리 픽셀로 쓰여 화면 배율 125~150%에서 창이 작아 보이므로 최대화
     )
@@ -84,7 +85,15 @@ def main(argv: list[str] | None = None) -> int:
         except Exception:
             log.exception("화면 상태 확인 실패")
 
+    def on_closing() -> None:
+        # 창을 닫을 때 아직 드라이브 폴더에 올리지 않은 변경이 있으면 한 번 내보낸다 (실패해도 닫는다)
+        try:
+            api.exporter.flush_on_close()
+        except Exception:
+            log.exception("닫을 때 자동 내보내기 실패")
+
     window.events.loaded += on_loaded
+    window.events.closing += on_closing
     webview.start(debug=args.dev)
     return 0
 

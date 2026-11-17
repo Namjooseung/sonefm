@@ -392,3 +392,5 @@ sonefm-scheduler/
   - 집계는 `domain/report.py`. 전월 대비 신규/종영 비교는 넣지 않음(요청 없음).
 - 유튜브 탭: ffmpeg, 음성/음악 구간 분류 + 파형 확인 화면, 정지 이미지 + 오디오 mp4, 제목·설명은 편성 DB에서. 업로드는 방송국 유튜브 계정으로만 인증하고, API 검수 전에는 "파일 + 텍스트 생성 후 사람이 업로드".
 - 동기화: 공유 클라우드 폴더 + 편집 잠금 파일 방식부터 검토.
+
+- **2026-11-17: 드라이브 폴더 자동 내보내기**(바꿀 때 60초 후·닫을 때·폴더 지정 시), 고정 이름 `SoneFM편성표_데이터.db`, 임시 파일(`.SoneFM편성표_데이터.db.tmp`) 후 교체. 사본만 올리고 쓰는 DB는 옮기지 않는다. 폴더는 config.json `auto_export_dir`(빈 값 = 꺼짐), 마지막 결과는 `Documents\SoneFM\auto_export_status.json`. 규칙·실행은 `app/services/auto_export.py`, 변경 표시는 `Api._write`. 업무자동화 PC의 허브가 이 폴더의 .db를 읽는다.

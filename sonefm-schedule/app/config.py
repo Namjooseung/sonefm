@@ -37,6 +37,7 @@ class AppConfig:
     db_path: str
     backup_dir: str
     backup_keep: int = DEFAULT_BACKUP_KEEP
+    auto_export_dir: str = ""   # 드라이브 자동 내보내기 폴더. 빈 값 = 꺼짐
 
 
 def default_config() -> AppConfig:

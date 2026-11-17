@@ -81,3 +81,6 @@ export const pickFolder = () => call('pick_folder')
 /** mode: 'copy' 지금 데이터를 새 폴더로 복사 | 'use_existing' 그 폴더의 데이터 파일 쓰기 */
 export const dbMove = (folder, mode) => call('db_move', folder, mode)
 export const backupOptions = (folder, keep) => call('backup_options', folder, keep)
+/** 드라이브 폴더 자동 내보내기. folder가 빈 값이면 끈다 */
+export const autoExportStatus = () => call('auto_export_status')
+export const autoExportSet = (folder) => call('auto_export_set', folder)

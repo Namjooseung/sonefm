@@ -14,13 +14,14 @@ from typing import Any
 
 from app import APP_VERSION
 from app.backup import backup_db
-from app.config import AppConfig
+from app.config import AppConfig, save_config
 from app.db.connection import open_db
 from app.domain import programs as program_rules
 from app.repository import meta_repo
 from app.repository import change_log_repo
 from app.services import cell_edit, month_status
 from app.services import data as data_service
+from app.services.auto_export import AutoExporter
 from app.services import excel as excel_service
 from app.services import journal as journal_service
 from app.services import report as report_service
@@ -40,6 +41,7 @@ class Api:
         # pywebview는 밑줄로 시작하는 속성을 화면에 노출하지 않는다
         self._cfg = cfg
         self._undo: list[dict[str, Any]] = []   # Ctrl+Z용 직전 상태 (이번 실행 동안만)
+        self.exporter = AutoExporter(cfg)       # 드라이브 폴더 자동 내보내기 (main.py가 창 닫을 때 부른다)
 
     def _run(self, name: str, fn: Callable[[sqlite3.Connection], Any]) -> Any:
         """DB 연결 하나 = 트랜잭션 하나. 실패 결과({"ok": False})면 쓰기를 되돌린다."""
@@ -59,6 +61,13 @@ class Api:
         except Exception:
             log.exception("%s 실패", name)
             return {"ok": False, "errors": [_UNEXPECTED]}
+
+    def _write(self, name: str, fn: Callable[[sqlite3.Connection], Any]) -> Any:
+        """편성 데이터를 바꾸는 호출. 성공하면 자동 내보내기에 '변경 있음'을 알린다."""
+        result = self._run(name, fn)
+        if isinstance(result, dict) and result.get("ok"):
+            self.exporter.mark_changed()
+        return result
 
     # ── 공통 ──────────────────────────────────────
     def ping(self) -> dict[str, Any]:
@@ -82,19 +91,19 @@ class Api:
         return self._run("get_program", lambda c: program_service.get_program(c, program_id))
 
     def save_program(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return self._run("save_program", lambda c: program_service.save_program(c, payload))
+        return self._write("save_program", lambda c: program_service.save_program(c, payload))
 
     def end_program(self, program_id: str, end_date: str) -> dict[str, Any]:
-        return self._run("end_program", lambda c: program_service.end_program(c, program_id, end_date))
+        return self._write("end_program", lambda c: program_service.end_program(c, program_id, end_date))
 
     def resume_program(self, program_id: str) -> dict[str, Any]:
-        return self._run("resume_program", lambda c: program_service.resume_program(c, program_id))
+        return self._write("resume_program", lambda c: program_service.resume_program(c, program_id))
 
     def delete_program(self, program_id: str) -> dict[str, Any]:
-        return self._run("delete_program", lambda c: program_service.delete_program(c, program_id))
+        return self._write("delete_program", lambda c: program_service.delete_program(c, program_id))
 
     def create_special(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return self._run("create_special", lambda c: program_service.create_special(c, payload))
+        return self._write("create_special", lambda c: program_service.create_special(c, payload))
 
     # ── 편성표 ────────────────────────────────────
     def get_month(self, year: int, month: int) -> dict[str, Any]:
@@ -103,7 +112,7 @@ class Api:
     def generate_month(self, year: int, month: int, scope: str,
                        overwrite_manual: bool = False) -> dict[str, Any]:
         """scope: first_week(첫 주 불러오기) | rest(월단위 생성) | all"""
-        return self._run("generate_month", lambda c: schedule_service.generate(
+        return self._write("generate_month", lambda c: schedule_service.generate(
             c, year, month, scope, bool(overwrite_manual)))
 
     # ── 칸 편집 ───────────────────────────────────
@@ -111,35 +120,35 @@ class Api:
         return self._run("get_cell", lambda c: cell_edit.get_cell(c, date, hour))
 
     def cell_set_kind(self, date: str, hour: int, kind: str, scope: str = "once") -> dict[str, Any]:
-        return self._run("cell_set_kind", lambda c: cell_edit.set_kind(c, date, hour, kind, scope))
+        return self._write("cell_set_kind", lambda c: cell_edit.set_kind(c, date, hour, kind, scope))
 
     def cell_cancel(self, date: str, hour: int, mode: str, reason: str = "") -> dict[str, Any]:
-        return self._run("cell_cancel", lambda c: cell_edit.cancel(c, date, hour, mode, reason))
+        return self._write("cell_cancel", lambda c: cell_edit.cancel(c, date, hour, mode, reason))
 
     def cell_replace(self, date: str, hour: int, program_id: str, kind: str, scope: str = "once") -> dict[str, Any]:
-        return self._run("cell_replace", lambda c: cell_edit.replace(c, date, hour, program_id, kind, scope))
+        return self._write("cell_replace", lambda c: cell_edit.replace(c, date, hour, program_id, kind, scope))
 
     def cell_special(self, date: str, hour: int, payload: dict[str, Any]) -> dict[str, Any]:
-        return self._run("cell_special", lambda c: cell_edit.put_special(c, date, hour, payload or {}))
+        return self._write("cell_special", lambda c: cell_edit.put_special(c, date, hour, payload or {}))
 
     def cell_override(self, date: str, hour: int, episode: Any) -> dict[str, Any]:
-        return self._run("cell_override", lambda c: cell_edit.set_override(c, date, hour, episode))
+        return self._write("cell_override", lambda c: cell_edit.set_override(c, date, hour, episode))
 
     def cell_actual(self, date: str, hour: int, note: str) -> dict[str, Any]:
-        return self._run("cell_actual", lambda c: cell_edit.set_actual(c, date, hour, note))
+        return self._write("cell_actual", lambda c: cell_edit.set_actual(c, date, hour, note))
 
     def cell_prep(self, date: str, hour: int, status: str) -> dict[str, Any]:
-        return self._run("cell_prep", lambda c: cell_edit.set_prep(c, date, hour, status))
+        return self._write("cell_prep", lambda c: cell_edit.set_prep(c, date, hour, status))
 
     def cell_revert(self, date: str, hour: int) -> dict[str, Any]:
-        return self._run("cell_revert", lambda c: cell_edit.revert(c, date, hour))
+        return self._write("cell_revert", lambda c: cell_edit.revert(c, date, hour))
 
     def undo(self) -> dict[str, Any]:
         """Ctrl+Z: 가장 최근 작업을 되돌린다 (이번 실행 동안 한 작업만)."""
         if not self._undo:
             return {"ok": False, "errors": ["되돌릴 작업이 없습니다."], "can_undo": False}
         record = self._undo.pop()
-        result = self._run("undo", lambda c: cell_edit.undo(c, record))
+        result = self._write("undo", lambda c: cell_edit.undo(c, record))
         if not result.get("ok"):
             self._undo.append(record)
             result["can_undo"] = True
@@ -152,7 +161,7 @@ class Api:
     # ── 월 상태 ───────────────────────────────────
     def month_status(self, year: int, month: int, action: str, reason: str = "") -> dict[str, Any]:
         """action: confirm(확정) | reopen(확정 취소) | close(마감) | unlock(잠금 해제, 사유 필수)"""
-        return self._run("month_status", lambda c: month_status.change(c, year, month, action, reason))
+        return self._write("month_status", lambda c: month_status.change(c, year, month, action, reason))
 
     # ── 엑셀 ──────────────────────────────────────
     def _window(self):  # type: ignore[no-untyped-def]
@@ -178,7 +187,7 @@ class Api:
         except Exception:
             log.exception("가져오기 전 백업 실패")
             return {"ok": False, "errors": ["가져오기 전 백업을 만들지 못해 중단했습니다. 백업 폴더를 확인해 주세요."]}
-        result = self._run("excel_import", lambda c: excel_service.run_import(c, path, titles or [], mapping or {}, bool(overwrite)))
+        result = self._write("excel_import", lambda c: excel_service.run_import(c, path, titles or [], mapping or {}, bool(overwrite)))
         if result.get("ok") and backup:
             result["backup"] = str(backup)
         return result
@@ -239,13 +248,13 @@ class Api:
         return self._run("settings_get", settings_service.get_rules)
 
     def settings_save(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return self._run("settings_save", lambda c: settings_service.save_rules(c, payload or {}))
+        return self._write("settings_save", lambda c: settings_service.save_rules(c, payload or {}))
 
     def holiday_add(self, date: str, name: str) -> dict[str, Any]:
-        return self._run("holiday_add", lambda c: settings_service.add_holiday(c, date, name))
+        return self._write("holiday_add", lambda c: settings_service.add_holiday(c, date, name))
 
     def holiday_delete(self, date: str) -> dict[str, Any]:
-        return self._run("holiday_delete", lambda c: settings_service.delete_holiday(c, date))
+        return self._write("holiday_delete", lambda c: settings_service.delete_holiday(c, date))
 
     # ── 데이터 파일: 백업·복원·이동 ───────────────
     def _safe(self, name: str, fn: Callable[[], dict[str, Any]]) -> dict[str, Any]:
@@ -280,6 +289,7 @@ class Api:
         result = self._safe("backup_restore", lambda: data_service.restore(self._cfg, path))
         if result.get("ok"):
             self._undo.clear()
+            self.exporter.mark_changed()
         return result
 
     def data_import_pick(self) -> dict[str, Any]:
@@ -300,7 +310,28 @@ class Api:
         result = self._safe("db_move", lambda: data_service.change_db_location(self._cfg, folder, mode))
         if result.get("ok"):
             self._undo.clear()
+            self.exporter.mark_changed()
         return result
 
     def backup_options(self, folder: str | None, keep: Any) -> dict[str, Any]:
         return self._safe("backup_options", lambda: data_service.set_backup_options(self._cfg, folder, keep))
+
+    # ── 드라이브 폴더 자동 내보내기 ───────────────
+    def auto_export_status(self) -> dict[str, Any]:
+        return self._safe("auto_export_status", lambda: {"ok": True, **self.exporter.status()})
+
+    def auto_export_set(self, folder: str | None) -> dict[str, Any]:
+        """폴더를 고르면 켜고 바로 한 번 내보낸다. 비우면 끈다."""
+        def run() -> dict[str, Any]:
+            new = (folder or "").strip()
+            if new and not Path(new).is_dir():
+                return {"ok": False, "errors": ["폴더를 찾지 못했습니다. 드라이브 폴더를 다시 골라 주세요."]}
+            self._cfg.auto_export_dir = new
+            save_config(self._cfg)
+            if not new:
+                return {"ok": True, "message": "자동 내보내기를 껐습니다."}
+            result = self.exporter.export_now()
+            if not result.get("ok"):
+                return {"ok": False, "errors": result["errors"]}
+            return {"ok": True, "message": "자동 내보내기를 켜고 지금 한 번 내보냈습니다."}
+        return self._safe("auto_export_set", run)

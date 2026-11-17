@@ -8,6 +8,7 @@ import ImportWizard from '../components/ImportWizard.vue'
 const info = ref(null)          // 앱 버전·스키마
 const data = ref(null)          // DB 경로·백업
 const rules = ref(null)
+const autoExport = ref(null)   // { enabled, folder, at, ok, message }
 const programs = ref([])
 const notice = ref('')
 const noticeError = ref(false)
@@ -23,8 +24,9 @@ function flash(msg, error = false) {
 }
 
 async function loadAll() {
-  const [p, d, r, l] = await Promise.all([api.ping(), api.dataInfo(), api.settingsGet(), api.listPrograms('', true)])
+  const [p, d, r, l, ae] = await Promise.all([api.ping(), api.dataInfo(), api.settingsGet(), api.listPrograms('', true), api.autoExportStatus()])
   info.value = p
+  if (ae.ok) autoExport.value = ae
   if (d.ok) data.value = d
   if (r.ok) rules.value = { ...r, fixed_program_ids: r.fixed_programs.map((x) => x.id), music_program_ids: r.music_programs.map((x) => x.id) }
   if (l.ok) programs.value = l.items
@@ -100,6 +102,11 @@ async function changeBackupDir() {
   const f = await api.pickFolder()
   if (f.path) act(api.backupOptions(f.path, data.value.backup_keep))
 }
+async function pickAutoExport() {
+  const f = await api.pickFolder()
+  if (f.path) act(api.autoExportSet(f.path))
+}
+function stopAutoExport() { act(api.autoExportSet('')) }
 function runChoice(c) { confirm.value = null; c.run() }
 
 onMounted(loadAll)
@@ -186,6 +193,27 @@ onActivated(loadAll)
       <p class="muted small">다른 PC로 옮길 때: 이 PC에서 "데이터 내보내기" → 새 PC에서 "데이터 가져오기".</p>
     </div>
 
+    <!-- 드라이브 자동 내보내기 -->
+    <div v-if="autoExport" class="card body">
+      <h2>드라이브 자동 내보내기</h2>
+      <p class="muted small">편성을 바꾸면 구글 드라이브 폴더에 데이터 사본(SoneFM편성표_데이터.db)을 자동으로 올립니다. 마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때, 폴더를 처음 고를 때 올라갑니다. 지금 쓰는 데이터는 옮기지 않고 사본만 올립니다.</p>
+      <dl>
+        <dt>폴더</dt>
+        <dd>
+          <span v-if="autoExport.enabled">{{ autoExport.folder }}</span>
+          <span v-else class="muted">꺼져 있습니다</span>
+          <button class="btn btn-sm" :disabled="busy" @click="pickAutoExport">폴더 고르기</button>
+          <button v-if="autoExport.enabled" class="btn btn-ghost btn-sm" :disabled="busy" @click="stopAutoExport">끄기</button>
+        </dd>
+        <template v-if="autoExport.enabled">
+          <dt>마지막 결과</dt>
+          <dd v-if="!autoExport.at" class="muted">아직 내보낸 적이 없습니다.</dd>
+          <dd v-else-if="autoExport.ok">{{ autoExport.at }} 성공</dd>
+          <dd v-else class="danger-text">{{ autoExport.at }} 실패: {{ autoExport.message }}</dd>
+        </template>
+      </dl>
+    </div>
+
     <!-- 백업 -->
     <div v-if="data" class="card body">
       <h2>백업</h2>
@@ -254,6 +282,7 @@ dd { margin: 0; word-break: break-all; display: flex; gap: var(--space-100); ali
 .tbl th { text-align: left; font-weight: var(--font-weight-medium); color: var(--color-foreground-normal-100); }
 .tbl th, .tbl td { padding: var(--space-050) var(--space-100); border-bottom: 1px solid var(--color-border-normal); }
 .nowrap { white-space: nowrap; }
+.danger-text { color: var(--color-foreground-danger-100); }
 .pre { white-space: pre-line; }
 .toast {
   position: fixed; left: 50%; bottom: var(--space-300); transform: translateX(-50%); z-index: 50; max-width: 560px;
