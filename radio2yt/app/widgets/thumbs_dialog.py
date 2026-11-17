@@ -90,18 +90,24 @@ class ThumbTile(QWidget):
 class ThumbnailDialog(QDialog):
     """exec()가 Accepted면 self.selected_path 에 고른 이미지 경로가 들어 있다."""
 
-    def __init__(self, parent=None, audio_name: str = "", current: str | None = None):
+    def __init__(self, parent=None, audio_name: str = "", current: str | None = None,
+                 manage: bool = False):
         super().__init__(parent)
-        self.setWindowTitle("썸네일 선택")
+        self.manage = manage
+        self.setWindowTitle("썸네일 관리" if manage else "썸네일 선택")
         self.setModal(True)
         self.setFixedWidth(800)
         self.setMinimumHeight(560)
         self.selected_path = current or store.load_settings().get("last_thumbnail")
         self.tiles: list[ThumbTile] = []
 
-        title = label("썸네일 선택", "DialogTitle")
-        desc = label(f"{audio_name} 영상에 쓸 이미지를 고르세요." if audio_name
-                     else "영상에 쓸 이미지를 고르세요.", "DialogDesc")
+        title = label("썸네일 관리" if manage else "썸네일 선택", "DialogTitle")
+        if manage:
+            desc = label("영상에 쓸 썸네일을 추가하거나 지울 수 있습니다. 지우려면 이미지를 오른쪽 클릭하세요.",
+                         "DialogDesc")
+        else:
+            desc = label(f"{audio_name} 영상에 쓸 이미지를 고르세요." if audio_name
+                         else "영상에 쓸 이미지를 고르세요.", "DialogDesc")
         header = vbox(title, desc, spacing=4, margins=(24, 20, 24, 12))
 
         self.grid_host = QWidget()
@@ -119,14 +125,21 @@ class ThumbnailDialog(QDialog):
 
         add = button("이미지 추가", "outline", icon="image-plus")
         add.clicked.connect(self._add)
-        cancel = button("취소", "secondary")
-        cancel.clicked.connect(self.reject)
-        self.ok = button("선택", "primary")
-        self.ok.clicked.connect(self.accept)
-        self.ok.setDefault(True)
         footer = QFrame()
         footer.setObjectName("DialogFooter")
-        footer.setLayout(hbox(add, None, cancel, self.ok, spacing=8, margins=(24, 16, 24, 16)))
+        if manage:
+            close = button("닫기", "primary")
+            close.clicked.connect(self.reject)
+            close.setDefault(True)
+            self.ok = close  # _reload 가 setEnabled 를 부르므로 같은 이름을 쓰되 아래에서 항상 켠다
+            footer.setLayout(hbox(add, None, close, spacing=8, margins=(24, 16, 24, 16)))
+        else:
+            cancel = button("취소", "secondary")
+            cancel.clicked.connect(self.reject)
+            self.ok = button("선택", "primary")
+            self.ok.clicked.connect(self.accept)
+            self.ok.setDefault(True)
+            footer.setLayout(hbox(add, None, cancel, self.ok, spacing=8, margins=(24, 16, 24, 16)))
 
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -149,13 +162,14 @@ class ThumbnailDialog(QDialog):
             t = ThumbTile(info)
             t.set_selected(info["path"] == self.selected_path)
             t.clicked.connect(self._select)
-            t.doubleClicked.connect(lambda p: (self._select(p), self.accept()))
+            if not self.manage:
+                t.doubleClicked.connect(lambda p: (self._select(p), self.accept()))
             t.removeRequested.connect(self._remove)
             self.grid.addWidget(t, n // 3, n % 3)
             self.tiles.append(t)
         self.grid_host.parentWidget().parentWidget().setVisible(bool(items))
         self.empty.setVisible(not items)
-        self.ok.setEnabled(self.selected_path is not None)
+        self.ok.setEnabled(self.manage or self.selected_path is not None)
 
     def _select(self, path: str):
         self.selected_path = path
@@ -184,6 +198,8 @@ class ThumbnailDialog(QDialog):
             self._reload()
 
     def accept(self):
-        if self.selected_path:
+        if self.manage:
+            super().accept()
+        elif self.selected_path:
             store.save_setting("last_thumbnail", self.selected_path)
             super().accept()

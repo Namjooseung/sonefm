@@ -94,8 +94,10 @@ class EmptyView(QWidget):
         body = label("음악 구간을 찾아 잘라내고, 멘트만 남긴 유튜브용 영상을 만듭니다.", "Body")
         pick = button("파일 선택", "primary", "lg", icon="upload")
         pick.clicked.connect(self.openRequested)
-        inner = vbox(None, glyph, 6, title, body, 6, pick, None, spacing=12)
-        for w in (glyph, title, body, pick):
+        manage = button("썸네일 관리", "ghost", icon="image")
+        manage.clicked.connect(self._manage_thumbs)
+        inner = vbox(None, glyph, 6, title, body, 6, pick, manage, None, spacing=12)
+        for w in (glyph, title, body, pick, manage):
             inner.setAlignment(w, Qt.AlignHCenter)
         self.drop.setLayout(inner)
 
@@ -114,6 +116,10 @@ class EmptyView(QWidget):
         self.recent.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         self.drop.setMinimumHeight(260)
         self.refresh()
+
+    def _manage_thumbs(self):
+        from ..widgets.thumbs_dialog import ThumbnailDialog
+        ThumbnailDialog(self.window(), manage=True).exec()
 
     def refresh(self):
         self.recent.setVisible(self.table.reload() > 0)
