@@ -6,7 +6,9 @@
     "frequency는 업무일지 칸(한 칸 = 한 줄) 단위 등장 횟수다. 의미 없는 칸 16줄은 어느 유형에도 넣지 않았다.",
     "examples는 실제 문장이 아니라 뜻이 같은 익명 문장이다.",
     "automation.status: recipe_exists(recipe=레시피 id) / buildable(needs=필요한 앱 명령) / manual.",
-    "value_keys: 유형마다 뽑을 값 키(정의는 value_key_defs). defaults: 문장에 값이 없을 때 쓸 기본값, 값은 default_words의 낱말만."
+    "value_keys: 유형마다 뽑을 값 키(정의는 value_key_defs). defaults: 문장에 값이 없을 때 쓸 기본값, 값은 default_words의 낱말만.",
+    "required: 유형마다 {값 키: 질문}. 문장·LLM에서 못 뽑고 defaults도 없으면 계획 item.questions에 missing:<키> 질문을 남긴다.",
+    "recipe_blockers: {keywords, question_key, question}. 레시피가 있는 유형이어도 업무 글자에 keywords 낱말이 있으면 checklist로 두고 질문을 남긴다."
   ],
   "types": [
     {
@@ -113,22 +115,20 @@
     {
       "id": "youtube_upload",
       "name": "유튜브 올리기",
-      "description": "지난 방송을 영상으로 만들어 유튜브에 올리고, 올린 회차 기록·섹션·재생목록 정리",
+      "description": "지난 방송을 영상으로 만들어 유튜브에 올리고, 올린 회차를 기록",
       "departments": [
         "홍보부",
         "편성제작부"
       ],
-      "frequency": 233,
+      "frequency": 212,
       "examples": [
         "지난 방송을 영상으로 만들어 유튜브에 올리고 올린 회차를 비고란에 적습니다.",
         "이번 달 편성표를 보고 유튜브에 방송을 올려 주세요.",
-        "유튜브에 이번 달 섹션을 만들어 맨 위로 올립니다."
+        "유튜브에 이번 달 방송 파일을 올립니다."
       ],
       "keywords": [
         "유튜브 업로드",
-        "유튜브",
-        "섹션",
-        "재생목록"
+        "유튜브"
       ],
       "automation": {
         "status": "recipe_exists",
@@ -143,6 +143,46 @@
         "months",
         "order",
         "programs"
+      ],
+      "defaults": {},
+      "recipe_blockers": {
+        "keywords": ["참여누리", "시청자미디어재단", "미디어재단", "메일 참고", "메일로 받", "받은 파일", "지원기관", "사전고지"],
+        "question_key": "input_file",
+        "question": "올릴 파일을 넣어 주세요(받은 파일을 쓰는 업무는 아직 레시피가 없습니다)"
+      }
+    },
+    {
+      "id": "youtube_channel_manage",
+      "name": "유튜브 채널 관리",
+      "description": "유튜브 섹션·재생목록 만들기와 순서 조정, 홈 화면 정리 같은 채널 정리",
+      "departments": [
+        "홍보부",
+        "편성제작부"
+      ],
+      "frequency": 21,
+      "examples": [
+        "유튜브에 이번 달 섹션을 만들어 맨 위로 올립니다.",
+        "재생목록 순서를 최근 방송이 먼저 보이게 바꿔 주세요.",
+        "홈 화면을 최근 방송으로 바꿉니다."
+      ],
+      "keywords": [
+        "섹션",
+        "재생목록",
+        "섹션 만들기",
+        "섹션을 만들",
+        "맨 위로",
+        "홈 화면",
+        "채널 정리"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
       ],
       "defaults": {}
     },
@@ -626,8 +666,9 @@
         "deadline",
         "time"
       ],
-      "defaults": {
-        "month": "prev_month"
+      "defaults": {},
+      "required": {
+        "month": "어느 달 보고서인가요?"
       }
     },
     {

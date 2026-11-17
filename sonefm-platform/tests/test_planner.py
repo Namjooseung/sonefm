@@ -44,7 +44,7 @@ def cell(text: str, d: str = "2026-06-22", dept: str = "홍보부") -> dict:
 # ---- 유형 사전 -----------------------------------------------------------------------
 
 def test_유형_사전이_저장소에_있고_레시피와_맞음(tt, recipes):
-    assert len(tt["types"]) == 59 and MISC in tt["types"]
+    assert len(tt["types"]) == 60 and MISC in tt["types"]
     for r in recipes.values():                       # 레시피가 선언한 유형은 사전에 있어야 한다
         for t in r.get("task_types", []):
             assert t in tt["types"], f"{r['id']}: 모르는 유형 {t}"
@@ -358,13 +358,58 @@ def test_체크리스트_단계와_자동화_힌트(tt, recipes):
     assert bj["automation_hint"].startswith("자동화 예정") and bj["checklist"]["steps"] == []
 
 
-def test_업무_단위_쪼개짐과_기본값(tt, recipes):
+def test_업무_단위_쪼개짐과_기본값_없음(tt, recipes):
     plan = plan_cells([cell("1. 방송일지 작성\n2. 청소하기", d="2025-12-30"),
                        cell("방송통신사업소 월별보고서 제출", d="2025-12-30")], tt, recipes, [], now=NOW)
     ids = [i["id"] for i in plan["items"]]
     assert len(ids) == 3 and ids[0].endswith("#1") and ids[1].endswith("#2")
     rep = next(i for i in plan["items"] if i["type"] == "monthly_broadcast_report")
-    assert rep["values"] == {"month": "2025-11"} and rep["value_sources"] == {"month": "default"}
+    assert rep["values"] == {} and rep["value_sources"] == {}               # 기본값 규칙 없음: 추측하지 않는다
+
+
+def test_required_질문(tt, recipes):
+    plan = plan_cells([cell("방송통신사업소 월별보고서 제출"), cell("6월 월별보고서 제출")], tt, recipes, [], now=NOW)
+    a, b = (i for i in plan["items"] if i["type"] == "monthly_broadcast_report")
+    assert a["questions"] == [{"key": "missing:month", "text": "어느 달 보고서인가요?"}]
+    assert b["values"] == {"month": "2026-06"} and b["questions"] == []
+    assert all(i["questions"] == [] for i in plan_cells([cell("스튜디오 청소")], tt, recipes, [], now=NOW)["items"])
+
+
+def test_recipe_blockers_받은_파일은_checklist와_질문(tt, recipes):
+    plan = plan_cells([cell("<유튜브 업로드> 시청자미디어재단 파일을 업로드해 주세요."),
+                       cell("<유튜브 업로드> 5월 방송을 올려 주세요.")], tt, recipes, [], now=NOW)
+    blocked, normal = plan["items"]
+    assert blocked["type"] == "youtube_upload" and blocked["mode"] == "checklist" and blocked["recipe"] is None
+    assert blocked["questions"][0]["key"] == "input_file" and "올릴 파일" in blocked["questions"][0]["text"]
+    assert blocked["automation_hint"] == "받은 파일용 레시피 예정" and blocked["checklist"]
+    assert normal["mode"] == "recipe" and normal["questions"] == []
+
+
+def test_새_유형_유튜브_채널_관리(tt, recipes):
+    assert "youtube_channel_manage" in tt["types"] and "youtube_channel_manage" in tt["order"]
+    plan = plan_cells([cell("재생목록 순서를 바꿔 주세요."), cell("유튜브에 이번 달 섹션을 만들어 맨 위로 올립니다.")],
+                      tt, recipes, [], now=NOW)
+    assert [i["type"] for i in plan["items"]] == ["youtube_channel_manage"] * 2
+    assert all(i["mode"] == "checklist" for i in plan["items"])
+
+
+def test_required_recipe_blockers_모양_검사(tmp_path):
+    import copy
+    raw = json.loads((resource_dir() / "task_types.json").read_text(encoding="utf-8"))
+
+    def load(mut):
+        d = copy.deepcopy(raw)
+        mut({t["id"]: t for t in d["types"]})
+        f = tmp_path / "t.json"
+        f.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        return load_task_types(f)
+    assert load(lambda t: None)["types"]["youtube_upload"]["recipe_blockers"]["question_key"] == "input_file"
+    for mut in (lambda t: t["cleaning"].update(required=["month"]),
+                lambda t: t["cleaning"].update(required={"zzz": "?"}),                  # value_keys에 없는 키
+                lambda t: t["youtube_upload"]["recipe_blockers"].update(keywords=[]),
+                lambda t: t["youtube_upload"]["recipe_blockers"].pop("question")):
+        with pytest.raises(ValueError):
+            load(mut)
 
 
 def test_회차마다_실행이_하나씩(tt, recipes):
@@ -530,3 +575,33 @@ def test_평가_값_비교():
     assert E.pair_equal(("quantity", "3~5개"), ("quantity", "하루 3~5개"))
     assert E.pair_equal(("month", "2026-05"), ("month", "2026-05")) and not E.pair_equal(("month", "2026-05"), ("month", "2026-06"))
     assert E.count_matches([("date", "2026-01-01")], [("date", "2026-01-01"), ("date", "2026-01-01")]) == 1
+
+
+
+def test_평가_M8_질문_지표(tmp_path):
+    sys.path.insert(0, str(ROOT / "tools"))
+    import planner_eval as E
+    assert E.question_keys(["missing:month", "x", "input_file"]) == {"missing:month", "input_file"}
+    src = tmp_path / "set.csv"
+    ycell = json.dumps([{"type": "youtube_upload", "values": {}}])
+    with open(src, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["번호", "날짜", "부서", "원문", "문장 종류", "정답 업무 목록", "필요한 질문", "처리 방식"])
+        w.writerow(["1", "2026-06-22", "총괄", "방송통신사업소 월별보고서 제출", "지시",
+                    json.dumps([{"type": "monthly_broadcast_report", "values": {}}]), '["missing:month"]', "checklist"])
+        w.writerow(["2", "2026-06-22", "홍보부", "<유튜브 업로드> 시청자미디어재단 파일 업로드", "지시", ycell, '["input_file"]', "checklist"])
+        w.writerow(["3", "2026-06-22", "홍보부", "<유튜브 업로드> 5월 방송 업로드", "지시", ycell, "[]", "recipe"])
+        w.writerow(["4", "2026-06-22", "총괄", "6월 월별보고서 제출", "지시",
+                    json.dumps([{"type": "monthly_broadcast_report", "values": {"month": "2026-06"}}]), '["missing:month"]', "checklist"])
+    out = tmp_path / "r.json"
+    assert E.main(["--set", str(src), "--mode", "keyword", "--out", str(out)]) == 0
+    res = json.loads(out.read_text(encoding="utf-8"))
+    assert res["M8"]["tp"] == 2 and res["M8"]["pred"] == 2 and res["M8"]["gold"] == 3
+    assert res["M8"]["recall"] == round(2 / 3, 4) and res["M8"]["precision"] == 1.0
+    assert [e["번호"] for e in res["errors"]["M8"]] == ["4"]
+    assert res["M4"]["recipe"]["gold"] == 1 and res["M4"]["recipe"]["tp"] == 1      # 2번 줄(input_file)은 recipe 정답이 아님
+    assert E.read_set(src)[0]["questions"] == ["missing:month"]
+    # 열이 없는 세트는 빈 목록
+    src2 = tmp_path / "old.csv"
+    src2.write_text("번호,날짜,부서,원문,문장 종류,정답 업무 목록\n1,2026-06-22,총괄,청소,지시,[]\n", encoding="utf-8-sig")
+    assert E.read_set(src2)[0]["questions"] == []

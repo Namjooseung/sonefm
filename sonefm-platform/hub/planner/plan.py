@@ -167,12 +167,20 @@ def _item(rec: dict[str, Any], ref_types: dict[str, Any], by_type: dict[str, dic
         "sentence_kind": rec["sentence_kind"], "type": rec["type"], "type_name": type_def["name"],
         "classified_by": rec["classified_by"], "keyword": kw, "llm_type": rec["llm_type"], "confidence": conf,
         "values": values, "value_sources": sources, "mode": "checklist", "recipe": None, "checklist": None,
-        "automation_hint": None, "depends_on": [], "flags": flags, "status": "draft",
+        "automation_hint": None, "questions": [], "depends_on": [], "flags": flags, "status": "draft",
     }
     if rec["sentence_kind"] != INSTRUCT:
         item["mode"] = "excluded"
         return item
+    for key, text in (type_def.get("required") or {}).items():       # 7.4: 값이 없으면 추측하지 않고 묻는다
+        if key not in values:
+            item["questions"].append({"key": f"missing:{key}", "text": text})
     recipe = by_type.get(rec["type"])
+    blk = type_def.get("recipe_blockers")
+    if recipe and blk and any(w in rec["text"] for w in blk["keywords"]):
+        recipe = None
+        item["questions"].append({"key": blk["question_key"], "text": blk["question"]})
+        item["automation_hint"] = "받은 파일용 레시피 예정"
     if recipe:
         item["mode"] = "recipe"
         item["recipe"] = {"id": recipe["id"],
@@ -181,7 +189,7 @@ def _item(rec: dict[str, Any], ref_types: dict[str, Any], by_type: dict[str, dic
     item["checklist"] = {"title": _title(type_def, values),
                          "steps": [{"text": s, "done": False} for s in rec["steps"]]}
     auto = type_def.get("automation") or {}
-    if auto.get("status") == "buildable":
+    if auto.get("status") == "buildable" and not item["automation_hint"]:
         item["automation_hint"] = f"자동화 예정: {auto.get('needs', '')}".rstrip(": ")
     if rec["credential"] and rec["keyword"]["state"] != C.CONFIRMED and rec["classified_by"] == "keyword":
         item["note"] = "계정 정보가 있는 칸이라 사람이 분류해 주세요."

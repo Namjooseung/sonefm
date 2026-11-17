@@ -8,7 +8,8 @@ LLM 모드는 실제 API를 부른다(돈이 든다). 키가 없거나 AI가 꺼
 llm-only-heavy = 키워드 결과와 상관없이 모든 업무(계정 칸 제외)를 heavy로 보낸다(평가 D 구성).
 
 지표: M1 업무 단위 분류(F1·줄 완전 일치·업무 개수), M2 문장 종류, M3 추출값(전체·날짜 계열),
-M4 처리 방식(recipe 정밀도·재현율), M5·M6 LLM 회부(keyword 모드는 회부 대상 수만), M7 가리기 위반.
+M4 처리 방식(recipe 정밀도·재현율), M5·M6 LLM 회부(keyword 모드는 회부 대상 수만), M7 가리기 위반,
+M8 질문(줄마다 정답 질문 키 집합 `missing:*`·`input_file` 대 예측 집합: 재현율·정밀도). CSV 열 "필요한 질문"(JSON 배열, 없으면 빈 목록).
 결과 JSON에는 숫자와 줄 번호별 오답(번호·정답 유형·예측 유형)만 둔다. 원문은 담지 않는다.
 """
 from __future__ import annotations
@@ -51,6 +52,7 @@ def read_set(path: Path) -> list[dict[str, Any]]:
         for r in csv.DictReader(f):
             rows.append({"no": r["번호"], "date": r["날짜"], "dept": r["부서"], "text": r["원문"],
                          "kind": r["문장 종류"], "gold": json.loads(r["정답 업무 목록"]),
+                         "questions": json.loads(r.get("필요한 질문") or "[]"),
                          "modes": {m.strip() for m in (r.get("처리 방식") or "").split(";") if m.strip()}})
     return rows
 
@@ -139,11 +141,12 @@ def predict_all(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, prog
     out: dict[str, dict[str, Any]] = {r["no"]: {"tasks": []} for r in rows}
     for it in plan["items"]:
         out[it["cell_key"][1:]]["tasks"].append({"type": it["type"], "values": it["values"], "sources": it["value_sources"],
-                                                 "mode": it["mode"], "kind": it["sentence_kind"]})
+                                                 "mode": it["mode"], "kind": it["sentence_kind"],
+                                                 "questions": [q["key"] for q in it.get("questions", [])]})
     for rp in plan["reports"]:
         out[rp["cell_key"][1:]]["tasks"].append({"type": rp["type"], "values": rp["values"],
                                                  "sources": rp["value_sources"], "mode": "excluded",
-                                                 "kind": rp["sentence_kind"]})
+                                                 "kind": rp["sentence_kind"], "questions": []})
     return {"by_row": out, "plan": plan}
 
 
@@ -153,6 +156,11 @@ def row_kind(tasks: list[dict[str, Any]]) -> str:
         return "지시"
     top, n = kinds.most_common(1)[0]
     return top if list(kinds.values()).count(n) == 1 else "지시"
+
+
+def question_keys(keys: Any) -> set[str]:
+    """M8에서 비교하는 질문 키만: `missing:*`와 `input_file`."""
+    return {k for k in keys if k == "input_file" or str(k).startswith("missing:")}
 
 
 def prf(tp: int, p: int, g: int) -> dict[str, float | int]:
@@ -171,7 +179,8 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
     all_pairs = {"all": [0, 0, 0], "date": [0, 0, 0]}   # tp, pred, gold
     r_tp = r_p = r_g = 0
     mode_ok = 0
-    err_m1, err_m2, err_m4, err_m3 = [], [], [], []
+    err_m1, err_m2, err_m4, err_m3, err_m8 = [], [], [], [], []
+    q_tp = q_p = q_g = q_rows = 0
     predicted = predict_all(rows, ref_types, recipes, programs, llm=clf, all_units=all_units)
     for row in rows:
         tasks = predicted["by_row"][row["no"]]["tasks"]
@@ -214,11 +223,19 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
                     err_m3.append({"번호": row["no"], "유형": g["type"], "정답 키": sorted({k for k, _ in gg}),
                                    "예측 키": sorted({k for k, _ in pp2})})
         # M4: recipe 업무
-        gr = Counter(g["type"] for g in gold if g["type"] in by_type)
+        # 정답 질문에 input_file이 있는 줄(받은 파일을 올리는 업무)은 recipe로 세지 않는다(AI_DESIGN 7.4)
+        gr = Counter(g["type"] for g in gold if g["type"] in by_type and "input_file" not in row["questions"])
         prr = Counter(t["type"] for t in tasks if t["mode"] == "recipe")
         r_tp, r_p, r_g = r_tp + sum((gr & prr).values()), r_p + sum(prr.values()), r_g + sum(gr.values())
         if gr != prr:
             err_m4.append({"번호": row["no"], "정답": sorted(gr.elements()), "예측": sorted(prr.elements())})
+        gq = question_keys(row["questions"])
+        pq = question_keys(k for t in tasks for k in t.get("questions", []))
+        q_tp, q_p, q_g = q_tp + len(gq & pq), q_p + len(pq), q_g + len(gq)
+        if gq or pq:
+            q_rows += 1
+        if gq != pq:
+            err_m8.append({"번호": row["no"], "정답": sorted(gq), "예측": sorted(pq)})
         pm = {t["mode"] for t in tasks if t["mode"] != "excluded"} or {"checklist"}
         mode_ok += pm == (row["modes"] or {"checklist"})
     # 회부 대상과 가리기
@@ -243,10 +260,12 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
                                 "unclassified": sum(r["keyword"]["state"] == C.UNCLASSIFIED and not r["credential"] for r in recs),
                                 "kind_unsure": sum(r["kind_unsure"] and not r["credential"] for r in recs)},
                   "calls": 0, "cost_usd": 0.0, "latency_ms": None},
+        "M8": {**prf(q_tp, q_p, q_g), "rows_with_questions": q_rows, "rows": n,
+               "note": "줄마다 정답 질문 키(missing:*·input_file) 집합 대 예측 집합"},
         "M7": {"violations": viol, "bundle_units": len(bundle["items"]),
                "credential_cells_in_set": sum(1 for r in recs if r["credential"]),
                "credential_units_sent": sum(1 for it in bundle["items"] if any(r["id"] == it["id"] and r["credential"] for r in recs))},
-        "errors": {"M1": err_m1, "M2": err_m2, "M3": err_m3, "M4": err_m4},
+        "errors": {"M1": err_m1, "M2": err_m2, "M3": err_m3, "M4": err_m4, "M8": err_m8},
     }
     if clf is not None:
         res["M5_M6"] = llm_metrics(clf, len(rows), len(recs), res["M5_M6"], predicted["plan"])
@@ -297,7 +316,7 @@ def _leaves(d: Any, path: str = "") -> dict[str, float]:
 
 def summarize_runs(results: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
     """반복 실행의 숫자 지표 평균·최소·최대 (M1~M6)."""
-    flat = [_leaves({k: r[k] for k in ("M1", "M2", "M3", "M4", "M5_M6")}) for r in results]
+    flat = [_leaves({k: r[k] for k in ("M1", "M2", "M3", "M4", "M5_M6", "M8")}) for r in results]
     return {k: {"mean": round(statistics.mean(f[k] for f in flat), 4),
                 "min": min(f[k] for f in flat), "max": max(f[k] for f in flat)}
             for k in flat[0] if all(k in f for f in flat)}
@@ -373,7 +392,7 @@ def main(argv: list[str] | None = None, ai_ready: Any = None) -> int:
     text = json.dumps(result, ensure_ascii=False, indent=1)
     if a.out:
         a.out.write_text(text, encoding="utf-8")
-    brief = {k: result[k] for k in ("rows", "units", "M1", "M2", "M3", "M4", "M5_M6", "M7", "runs_summary") if k in result}
+    brief = {k: result[k] for k in ("rows", "units", "M1", "M2", "M3", "M4", "M5_M6", "M7", "M8", "runs_summary") if k in result}
     print(json.dumps(brief, ensure_ascii=False, indent=1))
     return 0
 

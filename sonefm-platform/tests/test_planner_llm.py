@@ -80,7 +80,7 @@ def test_system은_매번_같고_스키마는_유형_enum(tt):
     a, b = L.build_system(tt), L.build_system(load_task_types())
     assert a == b and len(a) > 3000
     enum = L.build_schema(tt)["properties"]["units"]["items"]["properties"]["tasks"]["items"]["properties"]["type"]["enum"]
-    assert len(enum) == 59 and MISC in enum
+    assert len(enum) == 60 and MISC in enum
 
 
 def test_스키마_오류_뒤_재시도(tt, recipes):
