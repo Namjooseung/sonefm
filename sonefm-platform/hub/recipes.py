@@ -28,7 +28,7 @@ def load_recipes(dirs: list[Path]) -> tuple[dict[str, dict[str, Any]], list[str]
     """→ (id → 레시피, 문제 목록). 뒤 폴더가 같은 id를 덮는다. 같은 폴더 안은 파일 이름 순."""
     recipes: dict[str, dict[str, Any]] = {}
     problems: list[str] = []
-    for d in dirs:
+    for di, d in enumerate(dirs):
         for f in sorted(Path(d).glob("*.json")) if Path(d).is_dir() else []:
             try:
                 r = json.loads(f.read_text(encoding="utf-8"))
@@ -41,6 +41,9 @@ def load_recipes(dirs: list[Path]) -> tuple[dict[str, dict[str, Any]], list[str]
                 problems.append(f"레시피 {f.name}을(를) 읽지 못했습니다: {e}")
                 continue
             r["_file"] = str(f)
+            r["_dir_index"] = di
+            if not isinstance(r.get("task_types"), list):    # 플래너 연결 필드(선택): 모양이 다르면 무시
+                r.pop("task_types", None)
             recipes[r["id"]] = r
     return recipes, problems
 
@@ -82,9 +85,12 @@ def render(value: Any, ctx: dict[str, Any]) -> Any:
 def form(recipe: dict[str, Any], ctx: dict[str, Any], remembered: dict[str, Any]) -> list[dict[str, Any]]:
     """실행 전 입력 폼: default / from_text(업무 글자에서 정규식) / remember(지난번 값)로 미리 채운다."""
     fields = []
+    planned = ctx.get("values") or {}      # 플래너가 뽑은 값(선택). from_value가 가장 먼저
     for spec in recipe.get("inputs", []):
         value: Any = ""
-        if spec.get("remember") and remembered.get(spec["name"]):
+        if spec.get("from_value") and planned.get(spec["from_value"]) not in (None, "", []):
+            value = planned[spec["from_value"]]
+        elif spec.get("remember") and remembered.get(spec["name"]):
             value = remembered[spec["name"]]
         elif spec.get("from_text"):
             m = re.search(spec["from_text"], (ctx.get("task") or {}).get("text", ""))
@@ -116,6 +122,68 @@ def coerce_inputs(recipe: dict[str, Any], raw: dict[str, Any]) -> dict[str, Any]
                 raise RecipeError(f"'{spec.get('label', spec['name'])}'은(는) 숫자로 입력하세요.") from None
         out[spec["name"]] = v
     return out
+
+
+def recipes_by_type(recipes: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """업무 유형 id → 그 유형을 맡는 레시피(`task_types`). 한 유형을 둘이 선언하면 나중 폴더(사용자 폴더)가 우선,
+    같은 폴더면 파일 이름 순 첫 레시피."""
+    out: dict[str, dict[str, Any]] = {}
+    for r in sorted(recipes.values(), key=lambda r: (-r.get("_dir_index", 0), r.get("_file", ""), r["id"])):
+        for t in r.get("task_types") or []:
+            out.setdefault(t, r)
+    return out
+
+
+def foreach_items(recipe: dict[str, Any], values: dict[str, Any]) -> list[dict[str, Any]]:
+    """`foreach` 값 목록 → 실행마다의 값 묶음. 없거나 목록이 비면 [{}](실행 하나).
+
+    `episodes`는 programs[].episodes를 {program, episode}로 펼친다."""
+    key = recipe.get("foreach")
+    if not key:
+        return [{}]
+    seq = values.get(key)
+    if not seq and key == "episodes":
+        seq = [{"program": p.get("name"), "episode": e} for p in values.get("programs", []) or []
+               for e in p.get("episodes", [])]
+    if not isinstance(seq, list) or not seq:
+        return [{}]
+    return [x if isinstance(x, dict) else {"item": x} for x in seq]
+
+
+def plan_runs(recipe: dict[str, Any], values: dict[str, Any], task: dict[str, Any]) -> list[dict[str, Any]]:
+    """플래너용: 실행마다 입력을 채운다. 빠진 값은 missing·questions. from_value → from_text → default 순."""
+    runs = []
+    for item in foreach_items(recipe, values):
+        rv = {**values, **item}
+        inputs: dict[str, Any] = {}
+        missing: list[str] = []
+        questions: list[str] = []
+        for spec in recipe.get("inputs", []):
+            val: Any = None
+            fv = spec.get("from_value")
+            if fv and rv.get(fv) not in (None, "", []):
+                val = rv[fv]
+            if val in (None, "") and spec.get("from_text"):
+                m = re.search(spec["from_text"], task.get("text", ""))
+                val = m.group(1) if m else None
+            if val in (None, "") and "default" in spec:
+                try:
+                    val = render(spec["default"], {"task": task, "today": task.get("date", "")})
+                except RecipeError:
+                    val = None
+            if val not in (None, "") and spec.get("type") == "int":
+                try:
+                    val = int(val)
+                except (TypeError, ValueError):
+                    val = None
+            if val in (None, ""):
+                if not spec.get("optional"):
+                    missing.append(spec["name"])
+                    questions.append(f"'{spec.get('label', spec['name'])}'을(를) 정해 주세요.")
+            else:
+                inputs[spec["name"]] = val
+        runs.append({"inputs": inputs, "missing": missing, "questions": questions})
+    return runs
 
 
 def run_recipe(recipe: dict[str, Any], ctx: dict[str, Any], apps: dict[str, App], workdir: Path,

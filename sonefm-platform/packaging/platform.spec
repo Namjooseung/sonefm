@@ -11,7 +11,8 @@ ROOT = Path(SPECPATH).parent
 a = Analysis(
     [str(ROOT / "hub" / "main.py")],
     pathex=[str(ROOT)],
-    datas=[(str(ROOT / "ui"), "ui"), (str(ROOT / "recipes"), "recipes")],
+    datas=[(str(ROOT / "ui"), "ui"), (str(ROOT / "recipes"), "recipes"),
+           (str(ROOT / "task_types.json"), ".")],
     # keyring 백엔드는 실행 때 이름으로 찾아 로드해서 자동 탐지가 놓친다. anthropic·httpx2도 동적 import가 많다
     hiddenimports=["hub.api", "hub.ai.claude", *collect_submodules("keyring.backends"),
                    *collect_submodules("anthropic"), *collect_submodules("httpx2")],

@@ -1,0 +1,2036 @@
+{
+  "version": 1,
+  "generated": "2026-11-17",
+  "source": "근무자 업무일지 2025-01 ~ 2026-11 (366일, 4,266줄, 고유 문장 1,455개)",
+  "notes": [
+    "frequency는 업무일지 칸(한 칸 = 한 줄) 단위 등장 횟수다. 의미 없는 칸 16줄은 어느 유형에도 넣지 않았다.",
+    "examples는 실제 문장이 아니라 뜻이 같은 익명 문장이다.",
+    "automation.status: recipe_exists(recipe=레시피 id) / buildable(needs=필요한 앱 명령) / manual.",
+    "value_keys: 유형마다 뽑을 값 키(정의는 value_key_defs). defaults: 문장에 값이 없을 때 쓸 기본값, 값은 default_words의 낱말만."
+  ],
+  "types": [
+    {
+      "id": "cleaning",
+      "name": "청소·주변 정리",
+      "description": "스튜디오·사무실·복도 청소, 분리수거, 설거지, 우편물 확인 같은 공간 관리",
+      "departments": [
+        "총괄",
+        "기타",
+        "근무자 매일 확인"
+      ],
+      "frequency": 481,
+      "examples": [
+        "스튜디오와 사무실 바닥을 쓸고 분리수거 쓰레기를 정리합니다.",
+        "스튜디오 세 곳과 복도를 청소기로 밀고 책상을 닦아 주세요.",
+        "탕비실 설거지를 하고 1층 우편물을 사무실에 가져다 둡니다."
+      ],
+      "keywords": [
+        "청소",
+        "분리수거",
+        "설거지",
+        "쓰레기",
+        "청소기",
+        "탕비실",
+        "우편물",
+        "걸레질",
+        "청소데이"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "worklog_write",
+      "name": "근무자 업무일지 작성",
+      "description": "그날 한 일을 업무일지에 적기",
+      "departments": [
+        "총괄"
+      ],
+      "frequency": 311,
+      "examples": [
+        "근무자 업무일지를 작성합니다.",
+        "오늘 업무한 내용을 적어 주세요.",
+        "지난주 근무했던 내용을 업무일지에 적어 둡니다."
+      ],
+      "keywords": [
+        "업무일지",
+        "업무한 내용",
+        "근무한 내용"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "studio_booking_check",
+      "name": "스튜디오 대여 확인",
+      "description": "예약 사이트에서 스튜디오 대여자를 확인해 비고에 적기",
+      "departments": [
+        "총괄",
+        "근무자 매일 확인"
+      ],
+      "frequency": 261,
+      "examples": [
+        "출근하면 스튜디오를 대여한 사람이 있는지 확인하고 비고란에 적습니다.",
+        "예약 페이지에서 오늘 스튜디오 예약을 확인해 주세요.",
+        "오늘자 녹음 예약이 있는지 확인합니다."
+      ],
+      "keywords": [
+        "스튜디오 대여",
+        "대여한 사람",
+        "예약 확인",
+        "네이버예약",
+        "녹음 예약"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "youtube_upload",
+      "name": "유튜브 올리기",
+      "description": "지난 방송을 영상으로 만들어 유튜브에 올리고, 올린 회차 기록·섹션·재생목록 정리",
+      "departments": [
+        "홍보부",
+        "편성제작부"
+      ],
+      "frequency": 233,
+      "examples": [
+        "지난 방송을 영상으로 만들어 유튜브에 올리고 올린 회차를 비고란에 적습니다.",
+        "이번 달 편성표를 보고 유튜브에 방송을 올려 주세요.",
+        "유튜브에 이번 달 섹션을 만들어 맨 위로 올립니다."
+      ],
+      "keywords": [
+        "유튜브 업로드",
+        "유튜브",
+        "섹션",
+        "재생목록"
+      ],
+      "automation": {
+        "status": "recipe_exists",
+        "recipe": "youtube-video"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "months",
+        "order",
+        "programs"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "playlist_make",
+      "name": "플레이리스트 제작",
+      "description": "컨셉을 정해 57분짜리 음악 플레이리스트를 만들어 메일·드라이브에 올리기",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 218,
+      "examples": [
+        "서로 다른 컨셉으로 플레이리스트 세 개를 만들어 주세요.",
+        "57분에 맞춰 만든 플레이리스트를 드라이브에 올립니다.",
+        "계절 분위기에 맞는 플레이리스트를 기획해 제작합니다."
+      ],
+      "keywords": [
+        "플레이리스트",
+        "57분",
+        "장르별",
+        "컨셉"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "duration",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "kakao_channel_check",
+      "name": "카카오톡 채널·메시지 확인",
+      "description": "카카오톡 채널·채팅에 새로 온 메시지를 확인해 근무 톡에 공유",
+      "departments": [
+        "근무자 매일 확인",
+        "총괄",
+        "편성제작부"
+      ],
+      "frequency": 192,
+      "examples": [
+        "카카오톡 채널에 새로 들어온 메시지가 있으면 근무 톡에 공유해 주세요.",
+        "카카오톡 채팅을 확인합니다.",
+        "채널 관리자 화면에 들어가 새 문의가 있는지 봅니다."
+      ],
+      "keywords": [
+        "카카오톡 채널",
+        "카카오채널",
+        "채팅 확인",
+        "새 메시지",
+        "메시지 확인"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "transmission_monitor",
+      "name": "송출 화면 확인",
+      "description": "기계실 송출 화면에서 당일 프로그램 셋팅·송출 상태 확인",
+      "departments": [
+        "근무자 매일 확인",
+        "총괄",
+        "편성제작부"
+      ],
+      "frequency": 186,
+      "examples": [
+        "출근하면 가장 먼저 기계실 송출 화면을 확인합니다.",
+        "오늘 나갈 프로그램이 모두 셋팅되었는지 화면에서 확인해 주세요.",
+        "송출 이상이 있으면 근무자 단톡방에 바로 알립니다."
+      ],
+      "keywords": [
+        "송출 화면",
+        "기계실",
+        "송출 확인",
+        "셋팅되었는지"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "photo_upload",
+      "name": "사진 정리·업로드",
+      "description": "행사·교육·봉사 사진을 파일명 규칙에 맞춰 사진 앨범·드라이브에 올리기",
+      "departments": [
+        "근무자 매일 확인",
+        "사업부",
+        "총괄",
+        "홍보부"
+      ],
+      "frequency": 158,
+      "examples": [
+        "메시지로 올라온 봉사활동 사진을 이름_날짜 형식으로 드라이브에 올립니다.",
+        "교육 사진을 찍어서 사진 앨범에 올려 주세요.",
+        "지난주 행사 사진을 날짜_행사명으로 정리합니다."
+      ],
+      "keywords": [
+        "사진",
+        "구글 포토",
+        "드라이브에 업로드",
+        "파일명",
+        "봉사활동 사진"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "새 명령: 파일명 규칙대로 바꿔 드라이브 폴더에 복사"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "cohort",
+        "filename_rule"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "promo_design",
+      "name": "홍보물·카드뉴스 제작",
+      "description": "카드뉴스·웹홍보물·웹자보·게시글·해시태그 작성",
+      "departments": [
+        "홍보부",
+        "사업부",
+        "경영부"
+      ],
+      "frequency": 120,
+      "examples": [
+        "방송을 소개하는 카드뉴스를 만들어 톡으로 보내 주세요.",
+        "행사 홍보 게시글을 쓰고 기본 해시태그를 답니다.",
+        "행사 웹자보를 만들어 공유합니다."
+      ],
+      "keywords": [
+        "카드뉴스",
+        "웹홍보물",
+        "웹자보",
+        "웹이미지",
+        "게시글",
+        "해시태그",
+        "홍보물",
+        "미리캔버스",
+        "캔바",
+        "포스터",
+        "현수막"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-media 렌더러(새 앱): 템플릿에 문구·사진을 넣어 카드뉴스·웹자보 이미지 렌더링"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "youtube_comment",
+      "name": "유튜브 댓글 달기",
+      "description": "올라간 방송을 듣고 유튜브 댓글 남기기",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 119,
+      "examples": [
+        "유튜브에 올라간 최근 방송을 듣고 댓글을 한두 개 남겨 주세요.",
+        "지난 댓글과 겹치지 않게 방송 감상 댓글을 답니다.",
+        "유튜브 방송 하나를 듣고 댓글을 남깁니다."
+      ],
+      "keywords": [
+        "댓글",
+        "리플",
+        "댓글 남기기"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "broadcast_journal",
+      "name": "방송일지 작성",
+      "description": "방송일지 작성·정리·출력",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 109,
+      "examples": [
+        "방송일지를 작성합니다.",
+        "지난달 방송일지를 정리해 출력해 주세요.",
+        "방송일지 쓰는 방법을 배워서 오늘부터 작성합니다."
+      ],
+      "keywords": [
+        "방송일지"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-schedule에 journal 명령 추가 (export_journal 이미 있음)"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "external_program_edit",
+      "name": "외부 제작 프로그램 편집",
+      "description": "받은 외부 제작 방송 파일을 57분에 맞게 편집해 메일로 보내기",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 107,
+      "examples": [
+        "메일로 받은 외부 제작 프로그램을 57분에 맞게 편집합니다.",
+        "편집한 파일을 메일로 보내 주세요.",
+        "이번 주 방송분 두 개를 편집해 송출용으로 올립니다."
+      ],
+      "keywords": [
+        "편집",
+        "57분",
+        "제작자 파일",
+        "편집 후 메일"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "parts",
+        "programs"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "external_activity_log",
+      "name": "외부 지원 사업 활동일지",
+      "description": "외부 일자리 지원 사업 참여자 활동일지 작성·제출",
+      "departments": [
+        "기타"
+      ],
+      "frequency": 103,
+      "examples": [
+        "지원 사업에 제출할 활동일지를 적어 주세요.",
+        "활동일지를 정리해서 제출합니다.",
+        "참여자 필수 제출 서류를 확인합니다."
+      ],
+      "keywords": [
+        "활동일지",
+        "신중년",
+        "베이비부머"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "event_education_ops",
+      "name": "행사·교육 운영 지원",
+      "description": "강의·교육 지원, 박람회·북콘서트·축제 부스·공모전·멘토링·외부 촬영 운영 지원",
+      "departments": [
+        "사업부",
+        "홍보부",
+        "경영부",
+        "박람회 TF"
+      ],
+      "frequency": 102,
+      "examples": [
+        "강의 전에 출석부와 간식을 준비하고 모임 사진을 찍어 주세요.",
+        "박람회 부스에 가져갈 장비를 최소한으로 챙깁니다.",
+        "북콘서트 대관을 신청합니다."
+      ],
+      "keywords": [
+        "강의",
+        "교육",
+        "행사",
+        "박람회",
+        "북콘서트",
+        "부스",
+        "대관",
+        "출석부",
+        "공모전",
+        "멘토링"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "accounting",
+      "name": "회계·영수증·지출결의서",
+      "description": "영수증·지출결의서·시재금·회계 정리·결산",
+      "departments": [
+        "경영부",
+        "사업부",
+        "기타"
+      ],
+      "frequency": 89,
+      "examples": [
+        "식대 영수증을 복사해 날짜별로 정리해 주세요.",
+        "이번 달 지출결의서를 오늘 날짜까지 정리합니다.",
+        "분기 수지결산을 작성합니다."
+      ],
+      "keywords": [
+        "영수증",
+        "지출결의서",
+        "시재금",
+        "회계",
+        "결산",
+        "지출내역",
+        "출입금",
+        "입출금",
+        "거래내역",
+        "연말정산"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "done_month",
+        "months"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "grant_proposal",
+      "name": "공모 신청서·제안서 작성",
+      "description": "공모사업 신청서·제안서·사업계획서 작성과 보완",
+      "departments": [
+        "사업부"
+      ],
+      "frequency": 83,
+      "examples": [
+        "지원사업 신청서를 작성합니다.",
+        "재단에 낼 사업 제안서 초안을 씁니다.",
+        "보완 요청이 온 신청 서류를 고칩니다."
+      ],
+      "keywords": [
+        "신청서",
+        "제안서",
+        "사업계획서",
+        "계획서",
+        "신청 작성",
+        "보완"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "문서 양식 기반 초안 작성 (새 문서 앱 또는 플랫폼 AI)"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "year"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "live_show",
+      "name": "라이브 방송",
+      "description": "라이브 방송 대본 작성·진행·외부 연결 셋팅",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 75,
+      "examples": [
+        "이번 주 금요일 라이브 방송 대본을 작성해 드라이브에 올립니다.",
+        "오후 1시 라이브 방송을 진행합니다.",
+        "외부 방송 연결이 시작될 때 잘 나가는지 확인해 주세요."
+      ],
+      "keywords": [
+        "라이브 방송",
+        "라이브",
+        "대본 작성",
+        "라이브 셋팅"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "monthly_broadcast_report",
+      "name": "방송통신사업소 월별보고서",
+      "description": "방송(미디어)통신사업소에 내는 월별 방송실시결과 보고서 작성·제출",
+      "departments": [
+        "편성제작부",
+        "총괄"
+      ],
+      "frequency": 70,
+      "examples": [
+        "지난달 보고서를 참고해 이번 달 월별보고서를 작성합니다.",
+        "전체 방송 시간이 맞는지 계산해 월별보고서를 제출해 주세요.",
+        "완성한 보고서를 편성표와 함께 드라이브에 올립니다."
+      ],
+      "keywords": [
+        "방송통신사업소",
+        "월별보고서",
+        "월별 보고서",
+        "방송실시결과"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-schedule에 report 명령 추가 (export_report 이미 있음, 같은 보고서로 확인됨)"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {
+        "month": "prev_month"
+      }
+    },
+    {
+      "id": "jingle_bridge_make",
+      "name": "고정 음원·브릿지 제작",
+      "description": "아침·마감 고정 음원, 시그널송, 재난방송 브릿지 선별·편집",
+      "departments": [
+        "편성제작부",
+        "경영부"
+      ],
+      "frequency": 67,
+      "examples": [
+        "아침·마감 고정 프로그램용 음원 다섯 개를 만들어 드라이브에 올립니다.",
+        "재난방송 브릿지로 쓸 음악을 고릅니다.",
+        "방송국 시그널송을 만들어 메일로 보냅니다."
+      ],
+      "keywords": [
+        "굿모닝",
+        "굿바이",
+        "시그널",
+        "브릿지",
+        "재난 브릿지",
+        "음원 제작"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "transmission_file_prep",
+      "name": "송출 파일 준비·입력",
+      "description": "송출할 방송 파일을 정리·입력하고 외장하드 파일·편성표 회차와 대조",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 65,
+      "examples": [
+        "실시간 송출 파일을 정리합니다.",
+        "올라온 파일이 외장하드 파일과 같은지, 편성표 회차와 맞는지 확인해 주세요.",
+        "다음 주 송출 파일을 송출 프로그램에 입력합니다."
+      ],
+      "keywords": [
+        "송출 업무",
+        "송출 파일",
+        "송출 입력",
+        "외장하드",
+        "실시간 송출"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-schedule month + 송출 폴더 파일과 편성 회차를 대조하는 새 명령"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "shorts_video",
+      "name": "쇼츠·홍보 영상 제작",
+      "description": "1분 이내 쇼츠·숏폼·홍보 영상 기획·촬영·편집",
+      "departments": [
+        "홍보부",
+        "사업부"
+      ],
+      "frequency": 64,
+      "examples": [
+        "지난 행사 사진과 영상으로 1분 이내 쇼츠를 만들어 주세요.",
+        "방송국 오는 길을 세로형 영상으로 촬영해 편집합니다.",
+        "숏폼 영상을 편집한 뒤 톡으로 보냅니다."
+      ],
+      "keywords": [
+        "쇼츠",
+        "숏츠",
+        "숏폼",
+        "홍보 영상",
+        "촬영",
+        "세로형"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-media 렌더러(새 앱): 사진·영상·자막으로 1분 이내 세로형 영상 렌더링 (촬영은 사람)"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "relicense_docs",
+      "name": "재허가·허가조건 서류",
+      "description": "방송 재허가 서류 수정, 허가조건 이행실적 작성",
+      "departments": [
+        "편성제작부",
+        "총괄",
+        "사업부"
+      ],
+      "frequency": 62,
+      "examples": [
+        "재허가 서류에서 프로그램 개수와 날짜를 수정합니다.",
+        "허가조건 이행실적 점검 자료를 작성합니다.",
+        "빨간 글씨로 표시된 부분을 양식에 옮겨 적어 주세요."
+      ],
+      "keywords": [
+        "재허가",
+        "허가조건",
+        "이행실적"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "youtube_backlog_check",
+      "name": "유튜브 미업로드 회차 확인",
+      "description": "편성표와 비교해 유튜브에 아직 안 올라간 회차와 어디까지 올렸는지 확인",
+      "departments": [
+        "홍보부",
+        "편성제작부"
+      ],
+      "frequency": 61,
+      "examples": [
+        "편성표를 보고 유튜브에 안 올라간 방송이 있는지 확인해 비고에 프로그램명_회차로 적어 주세요.",
+        "업로드가 밀린 방송이 있는지 확인합니다.",
+        "전날 근무자가 어디까지 올렸는지 확인하고 이어서 합니다."
+      ],
+      "keywords": [
+        "업로드 안된",
+        "밀린 방송",
+        "어디까지 업로드",
+        "미업로드"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "플랫폼 처리 기록 조회 + sonefm-schedule month로 미처리 회차 목록"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "programs"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "publication",
+      "name": "출판·기록집",
+      "description": "책·기록집 원고·사진 점검, 오타 점검, 디자인 시안 전달, 발주",
+      "departments": [
+        "사업부",
+        "경영부"
+      ],
+      "frequency": 61,
+      "examples": [
+        "출판 원고와 사진을 점검하고 내지를 정합니다.",
+        "책 오타를 2차로 점검합니다.",
+        "기록집 원고를 모아 디자인 업체에 보냅니다."
+      ],
+      "keywords": [
+        "출판",
+        "원고",
+        "오타",
+        "기록집",
+        "내지",
+        "발주",
+        "시안"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "viewer_participation_docs",
+      "name": "시청자참여프로그램 서류",
+      "description": "시청자참여프로그램 월별 제출 서류·지급 신청서, 선정 회차 파일 찾아 올리기",
+      "departments": [
+        "사업부",
+        "편성제작부",
+        "홍보부"
+      ],
+      "frequency": 56,
+      "examples": [
+        "시청자참여프로그램 이번 달 제출 서류를 지난달 양식으로 만듭니다.",
+        "선정된 방송 회차 파일을 찾아 드라이브에 올려 주세요.",
+        "월별 지급 신청서를 작성합니다."
+      ],
+      "keywords": [
+        "지급 신청서",
+        "선정된 방송",
+        "참여누리",
+        "미선정",
+        "시청자참여 프로그램 서류"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-schedule lookup + 전월 양식에 날짜·회차를 채우는 새 문서 앱"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "not_selected",
+        "programs"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "staff_management",
+      "name": "근무자 관리·업무지시",
+      "description": "근로장학생 업무지시·확인, 근무표, 인수인계 메모",
+      "departments": [
+        "총괄",
+        "기타",
+        "경영부"
+      ],
+      "frequency": 54,
+      "examples": [
+        "근로장학생 업무 내용을 정리해 전달합니다.",
+        "다음 달 근무표를 작성합니다.",
+        "다음 근무자를 위해 파일 위치와 하는 방법을 메모로 남깁니다."
+      ],
+      "keywords": [
+        "근로장학",
+        "근무표",
+        "근무시간",
+        "업무지시",
+        "인수인계"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "homepage_schedule_image",
+      "name": "홈페이지용 편성표 이미지",
+      "description": "월·주 편성표를 이미지로 만들어 홈페이지·키오스크에 올리기",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 43,
+      "examples": [
+        "이번 달 첫 주 편성표를 이미지로 만들어 홈페이지에 올려 주세요.",
+        "회차는 빼고 홈페이지용 편성표를 만듭니다.",
+        "홈페이지 편성표를 이번 달로 바꿉니다."
+      ],
+      "keywords": [
+        "편성표 이미지",
+        "홈페이지 편성표",
+        "편성표 업로드",
+        "주 편성표"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "sonefm-schedule에 편성 DB에서 주간 편성표 이미지를 렌더링하는 명령 추가"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "condition",
+        "week"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "sns_homepage_post",
+      "name": "홈페이지·SNS 게시",
+      "description": "만든 홍보물을 홈페이지·SNS·키오스크에 올리기, 이벤트 대상자 확인",
+      "departments": [
+        "홍보부",
+        "기타",
+        "사업부"
+      ],
+      "frequency": 41,
+      "examples": [
+        "카드뉴스를 홈페이지와 SNS에 올려 주세요.",
+        "뉴스레터 이미지를 키오스크에 보이도록 올립니다.",
+        "이벤트 댓글을 단 사람 중 대상자를 확인합니다."
+      ],
+      "keywords": [
+        "홈페이지",
+        "SNS",
+        "인스타",
+        "블로그",
+        "키오스크",
+        "이벤트"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "member_registry",
+      "name": "조합원·후원자 명부",
+      "description": "조합원·출자자·후원자 명부, 출자금 납입증명서, 대의원 신청 접수",
+      "departments": [
+        "경영부"
+      ],
+      "frequency": 41,
+      "examples": [
+        "조합원 명부를 최신으로 고칩니다.",
+        "출자금 납입증명서를 기준일에 맞춰 새로 만들어 주세요.",
+        "대의원 신청서를 확인하고 이름별 폴더에 정리합니다."
+      ],
+      "keywords": [
+        "조합원",
+        "명부",
+        "출자",
+        "후원자",
+        "후원금",
+        "대의원 신청",
+        "납입증명서"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "base_date"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "meeting",
+      "name": "회의 준비·진행·회의록",
+      "description": "운영진 회의 준비·진행·회의록, 회의 날짜 정하기, 외부 회의 참석",
+      "departments": [
+        "총괄",
+        "사업부",
+        "기타"
+      ],
+      "frequency": 40,
+      "examples": [
+        "운영진 회의를 준비합니다.",
+        "회의록을 작성해 공유해 주세요.",
+        "다음 운영진 회의 날짜를 정합니다."
+      ],
+      "keywords": [
+        "회의",
+        "회의록",
+        "운영진"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "svi_evidence",
+      "name": "사회적가치(SVI) 증빙",
+      "description": "사회적가치지표(SVI)·사회적기업 관련 증빙서류 준비·등록",
+      "departments": [
+        "경영부"
+      ],
+      "frequency": 39,
+      "examples": [
+        "SVI 증빙서류를 보강합니다.",
+        "사회적가치 평가 등록에 필요한 자료를 모아 주세요.",
+        "증빙서류를 정리해 등록을 시작합니다."
+      ],
+      "keywords": [
+        "SVI",
+        "증빙서류",
+        "사회적가치",
+        "사회적기업"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "partner_comms",
+      "name": "외부 기관 연락·서류 발송",
+      "description": "기관·강사·참여자에게 서류·안내 발송, 협약·보도자료",
+      "departments": [
+        "사업부",
+        "총괄",
+        "경영부",
+        "기타",
+        "편성제작부",
+        "홍보부"
+      ],
+      "frequency": 37,
+      "examples": [
+        "기관에 요청받은 서류를 보냅니다.",
+        "참여자 모집 문자를 보내 주세요.",
+        "업무협약 서류를 보내고 날짜를 확인합니다."
+      ],
+      "keywords": [
+        "발송",
+        "연락",
+        "업무협약",
+        "MOU",
+        "보도자료",
+        "문자 발송",
+        "안내"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "org"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "ask_or_learn",
+      "name": "지시 받기·설명 듣기",
+      "description": "담당자에게 할 일을 묻거나 업무 설명을 듣는 일",
+      "departments": [
+        "경영부",
+        "편성제작부",
+        "사업부"
+      ],
+      "frequency": 36,
+      "examples": [
+        "대표에게 새로 생긴 업무가 있는지 물어봐 주세요.",
+        "퇴근 전에 담당자에게 송출 업무 설명을 들어 주세요.",
+        "진행 상황을 담당자에게 묻고 업무일지에 적습니다."
+      ],
+      "keywords": [
+        "물어봐",
+        "설명 듣기",
+        "설명을 들어",
+        "문의",
+        "방법 알려"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "grant_settlement",
+      "name": "정산·이자반납·e나라도움",
+      "description": "지원사업 정산, 이자반납, e나라도움 등록·이체, 예산 확인",
+      "departments": [
+        "사업부"
+      ],
+      "frequency": 36,
+      "examples": [
+        "지원사업 이자반납을 처리합니다.",
+        "e나라도움에 이번 달 내역을 등록합니다.",
+        "정산 자료를 출력하고 지출 내용에 맞게 회의록을 씁니다."
+      ],
+      "keywords": [
+        "정산",
+        "이자반납",
+        "이자 반납",
+        "e나라도움",
+        "이체",
+        "예산",
+        "정보공시",
+        "사업 정산"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "project"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "own_program_production",
+      "name": "자체 방송 기획·녹음·편집",
+      "description": "방송국이 직접 만드는 회차 기획·대본·녹음·편집, AI 뉴스 대본 만들기 포함",
+      "departments": [
+        "편성제작부",
+        "사업부"
+      ],
+      "frequency": 35,
+      "examples": [
+        "새 방송 3화를 기획하고 대본을 씁니다.",
+        "추가 녹음 후 57분으로 편집해 메일로 보냅니다.",
+        "보도자료를 바탕으로 짧은 뉴스 대본을 만들어 봅니다."
+      ],
+      "keywords": [
+        "기획",
+        "대본",
+        "녹음",
+        "자체 제작",
+        "AI 뉴스",
+        "라디오 뉴스",
+        "뉴스 만들기",
+        "뉴스 제작"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "duration"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "schedule_make",
+      "name": "편성표 작성·프로그램 정리",
+      "description": "편성표 작성, 프로그램 방송 기간 정리",
+      "departments": [
+        "편성제작부",
+        "기타"
+      ],
+      "frequency": 33,
+      "examples": [
+        "다음 달 편성표를 작성합니다.",
+        "프로그램별 방송 기간을 이어서 정리해 주세요.",
+        "개편된 프로그램 목록을 정리합니다."
+      ],
+      "keywords": [
+        "편성표 작성",
+        "프로그램 기간",
+        "프로그램 정리"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "file_archive",
+      "name": "파일 정리·백업",
+      "description": "외장하드·드라이브 자료 옮기기·정리, 흩어진 파일 모으기",
+      "departments": [
+        "홍보부",
+        "사업부",
+        "기타",
+        "총괄",
+        "편성제작부"
+      ],
+      "frequency": 33,
+      "examples": [
+        "드라이브에 있는 파일을 외장하드로 옮깁니다.",
+        "흩어진 파일을 한 곳에 모아 정리해 주세요.",
+        "송출 파일을 외장하드에 정리합니다."
+      ],
+      "keywords": [
+        "외장하드",
+        "자료 정리",
+        "파일 정리",
+        "옮기기",
+        "백업"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "mail_check",
+      "name": "메일 확인",
+      "description": "제작자 파일·기관 공문 등 메일함 확인",
+      "departments": [
+        "편성제작부"
+      ],
+      "frequency": 32,
+      "examples": [
+        "메일함에서 제작자가 보낸 방송 파일을 확인합니다.",
+        "방송 관련 기관에서 온 메일을 확인해 주세요.",
+        "오늘 들어온 메일 중 처리할 것이 있는지 봅니다."
+      ],
+      "keywords": [
+        "메일 확인",
+        "메일함",
+        "제작자 파일"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "general_assembly",
+      "name": "총회 준비",
+      "description": "총회록·위임장·출석부·총회 발표 자료·공증 서류 준비",
+      "departments": [
+        "총회준비",
+        "총괄",
+        "기타",
+        "사업부"
+      ],
+      "frequency": 32,
+      "examples": [
+        "총회록과 총회 준비사항을 정리합니다.",
+        "총회 출석부와 위임장을 파일에 정리해 주세요.",
+        "총회 발표 자료를 만듭니다."
+      ],
+      "keywords": [
+        "총회",
+        "위임장",
+        "총준위",
+        "공증",
+        "총회록"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "thumbnail_make",
+      "name": "썸네일 제작",
+      "description": "프로그램·팀별 유튜브 썸네일 제작",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 20,
+      "examples": [
+        "프로그램별 썸네일을 만들어 주세요.",
+        "썸네일이 없는 프로그램을 찾아 새로 제작합니다.",
+        "팀별 자료를 보고 썸네일을 두 번째 페이지부터 만듭니다."
+      ],
+      "keywords": [
+        "썸네일",
+        "섬네일"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "새 명령: 썸네일 템플릿에 프로그램명·회차 넣기"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "programs",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "grant_report",
+      "name": "사업 보고서",
+      "description": "지원사업 중간·결과·최종 보고서와 진행 상황 보고",
+      "departments": [
+        "사업부",
+        "총괄"
+      ],
+      "frequency": 20,
+      "examples": [
+        "지원사업 중간보고서를 작성합니다.",
+        "최종 결과보고서를 작성하고 붙임 서류를 정리합니다.",
+        "사업 진행 상황을 메일로 보고합니다."
+      ],
+      "keywords": [
+        "중간보고서",
+        "결과보고서",
+        "최종보고서",
+        "보고서",
+        "진행상황"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "문서 양식 기반 보고서 초안 (새 문서 앱 또는 플랫폼 AI)"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "project",
+        "stage",
+        "year"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "equipment_management",
+      "name": "장비 관리·대여",
+      "description": "방송 장비 정리·소독·점검·대여·챙기기",
+      "departments": [
+        "사업부",
+        "기타",
+        "편성제작부",
+        "총괄"
+      ],
+      "frequency": 20,
+      "examples": [
+        "스튜디오 방송 장비를 알코올로 소독합니다.",
+        "장비를 정리해 주세요.",
+        "외부 수업에 쓸 장비를 챙깁니다."
+      ],
+      "keywords": [
+        "장비",
+        "소독",
+        "장비 대여",
+        "장비 정리"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "homepage_manage",
+      "name": "홈페이지 꾸미기·관리",
+      "description": "홈페이지 대문 사진·배너·팝업·도메인 같은 사이트 자체 수정",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 19,
+      "examples": [
+        "홈페이지 대문 사진을 계절에 맞게 바꿔 주세요.",
+        "배너를 누르면 신청서로 넘어가게 해 주세요.",
+        "홈페이지 도메인을 연장합니다."
+      ],
+      "keywords": [
+        "대문 사진",
+        "배너",
+        "팝업",
+        "도메인",
+        "홈페이지 수정",
+        "홈페이지 배너"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "cohort"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "newsletter",
+      "name": "뉴스레터·기부자 명단",
+      "description": "뉴스레터 제작, 기부자 명단 이미지",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 19,
+      "examples": [
+        "이번 달 뉴스레터를 만듭니다.",
+        "기부자 명단을 이미지 한두 장으로 만들어 톡으로 보내 주세요.",
+        "뉴스레터에 들어갈 소식을 모읍니다."
+      ],
+      "keywords": [
+        "뉴스레터",
+        "기부자 명단"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "volunteer_record",
+      "name": "자원봉사 기록",
+      "description": "자원봉사 일지·활동확인서 확인·입력·정리",
+      "departments": [
+        "경영부"
+      ],
+      "frequency": 19,
+      "examples": [
+        "스튜디오별 자원봉사 일지를 확인해 드라이브에 입력합니다.",
+        "자원봉사 활동확인서를 확인한 뒤 입력해 주세요.",
+        "달마다 자원봉사 내용을 표로 정리합니다."
+      ],
+      "keywords": [
+        "자원봉사",
+        "봉사 일지",
+        "활동확인서"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "weekdays"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "misc_manual",
+      "name": "기타(수동)",
+      "description": "어느 유형에도 맞지 않는 1회성 지시",
+      "departments": [
+        "사업부",
+        "기타",
+        "홍보부",
+        "경영부"
+      ],
+      "frequency": 17,
+      "examples": [
+        "워드 문서를 한글 양식에 맞춰 정리해 주세요.",
+        "택배 반품 물건을 문 앞에 놓아 주세요.",
+        "면접 일정을 조율하고 안내합니다."
+      ],
+      "keywords": [],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "priority"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "purchase_supplies",
+      "name": "비품·물품 구입",
+      "description": "간식·소품·사무용품 구입과 정리",
+      "departments": [
+        "경영부",
+        "사업부",
+        "편성제작부"
+      ],
+      "frequency": 16,
+      "examples": [
+        "간식을 온라인으로 사고 영수증을 PDF로 저장해 주세요.",
+        "방송국에 필요한 소모품 목록을 정리합니다.",
+        "사무용품을 정리합니다."
+      ],
+      "keywords": [
+        "구입",
+        "구매",
+        "간식",
+        "비품",
+        "사무용품",
+        "소품"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "items"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "grant_award_request",
+      "name": "교부신청",
+      "description": "선정된 사업의 교부신청서 작성·제출, 계약 준비",
+      "departments": [
+        "사업부",
+        "편성제작부"
+      ],
+      "frequency": 16,
+      "examples": [
+        "제출한 계획서 내용으로 교부신청서를 씁니다.",
+        "선정 결과에 맞춰 교부신청서를 고칩니다.",
+        "교부신청서 예산을 작성합니다."
+      ],
+      "keywords": [
+        "교부신청",
+        "교부 신청",
+        "교부신청서",
+        "선정 결과",
+        "계약"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "org"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "quote_invoice",
+      "name": "견적서·거래명세서",
+      "description": "견적서·거래명세서 작성·발송, 견적 의뢰",
+      "departments": [
+        "사업부",
+        "기타"
+      ],
+      "frequency": 16,
+      "examples": [
+        "장비 임대 견적서와 거래명세서를 작성합니다.",
+        "제작물 견적을 의뢰해 주세요.",
+        "견적서를 기관에 보냅니다."
+      ],
+      "keywords": [
+        "견적서",
+        "견적",
+        "거래명세서"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "새 문서 앱: 견적서·거래명세서 양식 채우기"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "org"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "print_docs",
+      "name": "서류 출력",
+      "description": "서류·자료 출력과 준비",
+      "departments": [
+        "사업부",
+        "편성제작부",
+        "기타",
+        "경영부"
+      ],
+      "frequency": 11,
+      "examples": [
+        "회의 자료를 한 부씩 출력해 주세요.",
+        "행사에 쓸 방명록을 두 부 출력합니다.",
+        "제출 서류를 출력해 파일에 넣어 둡니다."
+      ],
+      "keywords": [
+        "출력",
+        "프린트",
+        "인쇄"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "project",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "research_survey",
+      "name": "자료조사",
+      "description": "인터넷 검색으로 사례·가격·장소 등 자료 모으기",
+      "departments": [
+        "사업부",
+        "경영부",
+        "기타",
+        "홍보부"
+      ],
+      "frequency": 11,
+      "examples": [
+        "관련 사례 열 곳을 찾아 링크를 모아 주세요.",
+        "부품 가격을 검색해 엑셀에 합계를 적어 보냅니다.",
+        "가까운 곳에서 받을 수 있는 교육이 있는지 조사합니다."
+      ],
+      "keywords": [
+        "자료조사",
+        "조사",
+        "찾아서 링크",
+        "검색해서"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "broadcast_monitoring",
+      "name": "방송 모니터링",
+      "description": "방송을 듣고 모니터링 양식 작성",
+      "departments": [
+        "편성제작부",
+        "사업부",
+        "홍보부",
+        "경영부"
+      ],
+      "frequency": 10,
+      "examples": [
+        "틈나는 시간에 방송을 듣고 모니터링 양식에 적어 주세요.",
+        "하루 서너 편 모니터링한 내용을 드라이브에 올립니다.",
+        "지난주 방송 모니터링 결과를 정리합니다."
+      ],
+      "keywords": [
+        "모니터링"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "quantity"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "grant_search",
+      "name": "공모사업 찾기",
+      "description": "공모사업·지원사업 검색과 자료조사, 사업 검토",
+      "departments": [
+        "사업부",
+        "총괄"
+      ],
+      "frequency": 10,
+      "examples": [
+        "일자리 관련 공모사업을 찾아 링크를 톡으로 보내 주세요.",
+        "공모와 입찰 사업 목록을 정리합니다.",
+        "올해 신청할 만한 지원사업을 검토합니다."
+      ],
+      "keywords": [
+        "공모사업",
+        "검색",
+        "자료조사",
+        "지원사업 확인",
+        "사업 파악"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "pre_notice_edit",
+      "name": "사전고지 넣기",
+      "description": "지원 사업 방송 회차 앞에 사전고지를 넣어 57분으로 다시 편집",
+      "departments": [
+        "편성제작부",
+        "사업부"
+      ],
+      "frequency": 9,
+      "examples": [
+        "지정된 회차 앞에 사전고지를 넣어 다시 편집합니다.",
+        "넘치는 시간은 마지막 음악을 조금 잘라 57분에 맞춰 주세요.",
+        "사전고지를 넣은 파일을 드라이브에 다시 올립니다."
+      ],
+      "keywords": [
+        "사전고지"
+      ],
+      "automation": {
+        "status": "buildable",
+        "needs": "radio2yt에 오디오 앞에 고지를 붙이고 57분으로 맞추는 명령 추가"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time",
+        "duration",
+        "programs"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "notice_coordination",
+      "name": "공지·일정 조율",
+      "description": "점심 날짜 정하기 같은 근무자 공지·일정 조율",
+      "departments": [
+        "기타",
+        "편성제작부",
+        "홍보부"
+      ],
+      "frequency": 7,
+      "examples": [
+        "근무자 점심 식사 날짜를 정하려고 하니 가능한 날을 알려 주세요.",
+        "방학 중 빠지는 날을 미리 알려 주세요.",
+        "다음 주 일정을 공지합니다."
+      ],
+      "keywords": [
+        "일정",
+        "날짜 정하기",
+        "공지",
+        "가능한 날"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "manual_make",
+      "name": "매뉴얼 제작·수정",
+      "description": "송출·스튜디오 매뉴얼 찾기·수정·PDF 변환",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 7,
+      "examples": [
+        "송출 매뉴얼을 찾아 톡으로 보내 주세요.",
+        "라이브 송출 매뉴얼을 고칩니다.",
+        "스튜디오 매뉴얼 최종 파일을 PDF로 바꿉니다."
+      ],
+      "keywords": [
+        "매뉴얼"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "mgmt_disclosure",
+      "name": "경영공시",
+      "description": "협동조합 경영공시 입력",
+      "departments": [
+        "경영부"
+      ],
+      "frequency": 6,
+      "examples": [
+        "경영공시를 1차로 입력합니다.",
+        "경영공시 자료를 정리해 주세요.",
+        "경영공시를 진행합니다."
+      ],
+      "keywords": [
+        "경영공시"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "office_decor",
+      "name": "사무실 꾸미기",
+      "description": "계절 장식·입구 꾸미기와 정리",
+      "departments": [
+        "기타"
+      ],
+      "frequency": 6,
+      "examples": [
+        "입구에 계절 장식을 꾸며 주세요.",
+        "장식을 정리해 창고에 넣습니다.",
+        "출입문 안내문을 보기 좋게 꾸밉니다."
+      ],
+      "keywords": [
+        "트리",
+        "장식",
+        "꾸미기"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    },
+    {
+      "id": "promo_plan",
+      "name": "홍보 기획서",
+      "description": "방송국 홍보 방안을 기획서로 쓰기",
+      "departments": [
+        "홍보부"
+      ],
+      "frequency": 6,
+      "examples": [
+        "방송국을 알릴 방안을 기획서로 만들어 봅니다.",
+        "홍보 기획서를 마저 써서 톡으로 보내 주세요.",
+        "기획서 작성이 끝나면 공유합니다."
+      ],
+      "keywords": [
+        "홍보 기획서",
+        "기획서",
+        "홍보 방안"
+      ],
+      "automation": {
+        "status": "manual"
+      },
+      "value_keys": [
+        "date",
+        "month",
+        "period",
+        "deadline",
+        "time"
+      ],
+      "defaults": {}
+    }
+  ],
+  "value_key_defs": {
+    "date": "날짜 YYYY-MM-DD",
+    "month": "대상 월 YYYY-MM",
+    "months": "대상 월 목록 [YYYY-MM]",
+    "done_month": "이미 끝난 월 YYYY-MM",
+    "period": "기간 'YYYY-MM-DD~YYYY-MM-DD' 또는 'YYYY-MM~YYYY-MM' 또는 'YYYY~YYYY'",
+    "deadline": "기한 YYYY-MM-DD",
+    "base_date": "기준일 YYYY-MM-DD",
+    "time": "시각 HH:MM",
+    "week": "주 'YYYY-MM n주'",
+    "weekdays": "요일 목록 [월..일]",
+    "year": "연도 YYYY",
+    "programs": "프로그램 [{name, episodes:[정수]}] (name 없이 회차만 있을 수 있음)",
+    "not_selected": "선정되지 않은 프로그램, programs와 같은 형식",
+    "quantity": "수량(문장 그대로, 예: '3개', '2부', '하루 3~5개')",
+    "duration": "길이(예: '57분', '1분 이내')",
+    "org": "기관명",
+    "project": "사업명",
+    "stage": "단계(예: 중간보고서)",
+    "cohort": "기수(예: '11기')",
+    "items": "품목 목록",
+    "priority": "우선순위 표시(예: '가장 먼저')",
+    "condition": "조건(예: '회차 제외')",
+    "order": "처리 순서(예: '최근 날짜부터')",
+    "parts": "편·부분 목록",
+    "filename_rule": "파일명 규칙"
+  },
+  "default_words": {
+    "ref_date": "업무일지 날짜",
+    "this_month": "그 달 YYYY-MM",
+    "prev_month": "지난달 YYYY-MM",
+    "next_month": "다음 달 YYYY-MM",
+    "this_week": "그 주 월~일 'YYYY-MM-DD~YYYY-MM-DD'"
+  }
+}
