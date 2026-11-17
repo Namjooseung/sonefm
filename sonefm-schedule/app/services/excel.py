@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from app.domain.episodes import compute_episodes
+from app.domain.export_order import months_newest_first, span_label
 from app.domain.excel_text import format_cell_text, infer_slots, match_names, normalize_name, parse_cell_text
 from app.domain.weeks import iso_week, month_of_week, week_dates
 from app.io_excel.reader import Sheet, read_workbook
@@ -445,6 +446,28 @@ def export_months(conn: sqlite3.Connection, months: list[tuple[int, int]], path:
     except PermissionError:
         return _fail("파일을 저장할 수 없습니다. 같은 이름의 파일이 엑셀에 열려 있으면 닫고 다시 시도해 주세요.")
     return {"ok": True, "path": str(path), "message": f"엑셀로 내보냈습니다: {Path(path).name}"}
+
+
+_NO_CELLS = "내보낼 편성이 없습니다. 먼저 편성표 화면에서 달을 골라 '이 달 편성 만들기'를 해 주세요."
+
+
+def export_months_list(conn: sqlite3.Connection) -> Result:
+    """전체 내보내기 대상 달 (최신 달 먼저)와 파일 이름용 기간."""
+    months = months_newest_first(schedule_repo.cell_dates(conn))
+    if not months:
+        return _fail(_NO_CELLS)
+    return {"ok": True, "months": months, "span": span_label(months)}
+
+
+def export_all(conn: sqlite3.Connection, path: str) -> Result:
+    """편성이 있는 모든 달을 한 파일에, 달마다 시트 하나. 최신 달이 왼쪽 탭이고 첫 시트가 활성."""
+    listed = export_months_list(conn)
+    if not listed["ok"]:
+        return listed
+    result = export_months(conn, listed["months"], path)
+    if result["ok"]:
+        result["message"] = f"모든 달({len(listed['months'])}개월)을 엑셀로 내보냈습니다: {Path(path).name}"
+    return result
 
 
 # ── 확인: 엑셀 원본과 앱 칸 비교 ──────────────────

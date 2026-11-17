@@ -177,6 +177,11 @@ def max_cell_date(conn: sqlite3.Connection) -> date | None:
     return _D(row[0]) if row and row[0] else None
 
 
+def cell_dates(conn: sqlite3.Connection) -> list[date]:
+    """편성 칸이 하나라도 있는 모든 날짜 (중복 없음)."""
+    return [_D(r[0]) for r in conn.execute("SELECT DISTINCT date FROM schedule_cells")]
+
+
 def add_cancellation(conn: sqlite3.Connection, program_id: str, d: date, hour: int, reason: str | None) -> None:
     ts = now_iso()
     conn.execute(

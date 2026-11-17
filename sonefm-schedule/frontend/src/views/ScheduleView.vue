@@ -218,6 +218,16 @@ async function exportExcel() {
   if (!r.cancelled) flash(r.message)
 }
 
+async function exportExcelAll() {
+  busy.value = true
+  flash('모든 달을 엑셀로 만드는 중입니다. 잠시만 기다려 주세요.')
+  const r = await api.excelExportAll()
+  busy.value = false
+  if (!r.ok) { flash(r.errors[0], true); return }
+  if (r.cancelled) { clearTimeout(noticeTimer); notice.value = ''; return }
+  flash(r.message)
+}
+
 // ── 찾기 (Ctrl+F): 이 달 소속 주에서 프로그램명으로 칸 찾기 ──
 const searchInput = ref(null)
 const query = ref('')
@@ -363,6 +373,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <button class="btn btn-sm" :disabled="busy || !canUndo" title="Ctrl+Z" @click="doUndo">되돌리기</button>
           <button class="btn btn-sm" @click="logOpen = true">변경 기록</button>
           <button class="btn btn-sm" :disabled="busy" @click="exportExcel">엑셀 내보내기</button>
+          <button class="btn btn-sm" :disabled="busy" title="편성이 있는 모든 달을 한 파일로 (달마다 탭, 최신 달이 왼쪽)" @click="exportExcelAll">전체 내보내기(모든 달)</button>
           <button class="btn btn-sm" :aria-pressed="panelOpen" @click="panelOpen = !panelOpen">{{ panelOpen ? '패널 닫기' : '패널 열기' }}</button>
         </div>
         <div v-if="errors.length" class="callout callout-danger" role="alert">

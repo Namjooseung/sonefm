@@ -211,6 +211,26 @@ class Api:
             path += ".xlsx"
         return self._run("excel_export", lambda c: excel_service.export_months(c, [(int(year), int(month))], path))
 
+    def excel_export_all(self) -> dict[str, Any]:
+        """편성이 있는 모든 달을 한 엑셀 파일로 저장 (저장 창). 읽기 전용이라 자동 내보내기 대상 아님."""
+        import webview
+        win = self._window()
+        if win is None:
+            return {"ok": False, "errors": ["저장 창을 열 수 없습니다."]}
+        listed = self._run("excel_export_all", lambda c: excel_service.export_months_list(c))
+        if not listed.get("ok"):
+            return listed
+        name = f"SoneFM편성표_전체_{listed['span']}.xlsx"
+        docs = Path(self._cfg.db_path).parent.parent
+        picked = win.create_file_dialog(webview.SAVE_DIALOG, directory=str(docs), save_filename=name,
+                                        file_types=("엑셀 파일 (*.xlsx)",))
+        if not picked:
+            return {"ok": True, "cancelled": True}
+        path = picked if isinstance(picked, str) else picked[0]
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
+        return self._run("excel_export_all", lambda c: excel_service.export_all(c, path))
+
     def journal_export(self, year: int, month: int) -> dict[str, Any]:
         """그 달 방송일지(하루 1시트)를 엑셀로 저장 (저장 창). 편성표 그대로."""
         import webview
