@@ -89,3 +89,6 @@ export const driveFolderSet = (folder) => call('drive_folder_set', folder)
 export const autoExportEnable = (on) => call('auto_export_enable', on)
 export const driveImportPreview = () => call('drive_import_preview')
 export const driveImportRun = (expected) => call('drive_import_run', expected)
+/** 드라이브로 보내기(수동): 미리보기 → 확인 → 실행(expected = 미리보기의 드라이브 파일 정보) */
+export const driveExportPreview = () => call('drive_export_preview')
+export const driveExportRun = (expected) => call('drive_export_run', expected)

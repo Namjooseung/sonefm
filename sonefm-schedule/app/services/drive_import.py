@@ -13,6 +13,7 @@ from typing import Any
 
 from app.config import AppConfig, data_root
 from app.services import data as data_service
+from app.services.export_summary import summarize_drive_file, summarize_local
 
 log = logging.getLogger("sonefm.drive_import")
 Result = dict[str, Any]
@@ -20,6 +21,7 @@ Result = dict[str, Any]
 _NO_FOLDER = "드라이브 폴더가 정해져 있지 않습니다. 아래 '폴더 고르기'로 구글 드라이브 폴더(내 드라이브에 추가한 공유 폴더)를 먼저 골라 주세요."
 _BAD_FOLDER = "드라이브 폴더를 찾지 못했습니다. 구글 드라이브 데스크톱 앱이 켜져 있고 로그인돼 있는지 확인하고, 폴더를 다시 골라 주세요."
 _NO_FILE = "드라이브 폴더에 편성 데이터 파일(.db)이 없습니다. 편성 담당 PC에서 자동 내보내기가 켜져 있는지, 드라이브 동기화가 끝났는지 확인해 주세요."
+EMPTY_DRIVE = "드라이브 파일이 비어 있습니다. 편성 담당 PC에서 다시 보내 달라고 하세요."
 
 
 def pick_latest(files: list[tuple[str, float]]) -> str | None:
@@ -67,9 +69,14 @@ def preview(cfg: AppConfig) -> Result:
         local = Path(cfg.db_path).stat().st_mtime
     except OSError:
         local = None
+    summary = summarize_drive_file(src)   # 칸 수·마지막 달. 못 읽으면 None(가져올 때 다시 검사한다)
     return {"ok": True, "name": src.name, "mtime": st.st_mtime, "size": st.st_size, "modified": _fmt(st.st_mtime), "size_kb": max(1, round(st.st_size / 1024)),
             "older_than_local": is_older(st.st_mtime, local),
-            "local_modified": _fmt(local) if local is not None else None}
+            "local_modified": _fmt(local) if local is not None else None,
+            "cells": summary["cells"] if summary else None,
+            "programs": summary["programs"] if summary else None,
+            "last_month": summary["last_month"] if summary else None,
+            "empty": bool(summary and summary["cells"] <= 0)}
 
 
 def import_latest(cfg: AppConfig, expected: dict[str, Any] | None = None) -> Result:
@@ -99,6 +106,9 @@ def import_latest(cfg: AppConfig, expected: dict[str, Any] | None = None) -> Res
         shutil.rmtree(tmp_dir, ignore_errors=True)   # 부분 복사본 정리
         return {"ok": False, "errors": ["드라이브 파일을 가져오지 못했습니다. 동기화가 끝난 뒤 다시 시도해 주세요."]}
     try:
+        summary = summarize_local(tmp)
+        if summary is not None and summary["cells"] <= 0:
+            return {"ok": False, "errors": [EMPTY_DRIVE]}
         result = data_service.restore(cfg, str(tmp))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

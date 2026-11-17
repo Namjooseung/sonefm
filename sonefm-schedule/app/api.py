@@ -22,6 +22,7 @@ from app.repository import change_log_repo
 from app.services import cell_edit, month_status
 from app.services import data as data_service
 from app.services import drive_import
+from app.services import auto_export as auto_export_service
 from app.services.auto_export import AutoExporter
 from app.services.auto_export import cfg_enabled as auto_export_enabled
 from app.services import excel as excel_service
@@ -355,13 +356,11 @@ class Api:
             save_config(self._cfg)
             if not new:
                 return {"ok": True, "message": "드라이브 폴더를 지웠습니다."}
-            if was_on:
-                self.exporter.export_now()
             return {"ok": True, "message": "드라이브 폴더를 정했습니다."}
         return self._safe("drive_folder_set", run)
 
     def auto_export_enable(self, on: bool) -> dict[str, Any]:
-        """자동 내보내기 켜기·끄기(폴더는 그대로). 켜면 바로 한 번 내보낸다."""
+        """자동 내보내기 켜기·끄기(폴더는 그대로). 켜도 바로 보내지 않는다(이후 변경부터)."""
         def run() -> dict[str, Any]:
             if on and not (self._cfg.auto_export_dir or "").strip():
                 return {"ok": False, "errors": ["드라이브 폴더를 먼저 골라 주세요."]}
@@ -369,11 +368,20 @@ class Api:
             save_config(self._cfg)
             if not on:
                 return {"ok": True, "message": "자동 내보내기를 껐습니다."}
-            result = self.exporter.export_now()
-            if not result.get("ok"):
-                return {"ok": False, "errors": result["errors"]}
-            return {"ok": True, "message": "자동 내보내기를 켜고 지금 한 번 내보냈습니다."}
+            return {"ok": True, "message": "자동 내보내기를 켰습니다. 지금은 보내지 않고, 이후 편성을 바꿀 때부터 보냅니다."}
         return self._safe("auto_export_enable", run)
+
+    def drive_export_preview(self) -> dict[str, Any]:
+        """[드라이브로 보내기] 확인 창용: 드라이브·이 PC 편성 요약과 경고 여부."""
+        return self._safe("drive_export_preview", lambda: auto_export_service.preview_export(self._cfg))
+
+    def drive_export_run(self, expected: dict[str, Any] | None = None) -> dict[str, Any]:
+        """이 PC 편성으로 드라이브 편성을 바꾼다(덮기 전 보관). 이 PC가 비어 있으면 막는다.
+
+        expected: 미리보기가 돌려준 드라이브 파일 정보(name·mtime·size, 파일이 없었으면 exists=False).
+        그 사이 드라이브 파일이 바뀌었으면 보내지 않고 changed를 돌려준다.
+        """
+        return self._safe("drive_export_run", lambda: self.exporter.export_manual(expected))
 
     def drive_import_preview(self) -> dict[str, Any]:
         """드라이브 폴더에서 가져올 최신 파일 정보(이름·수정 시각·크기, 이 PC보다 오래됐는지)."""

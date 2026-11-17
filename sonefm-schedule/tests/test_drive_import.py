@@ -11,9 +11,24 @@ from app.services.data import _copy_db
 from app.startup import prepare
 
 
-def _api(folder=""):
+def _add_cells(db_path, n):
+    """시험용: 첫 프로그램으로 편성 칸 n개를 넣는다(견본 DB는 칸이 0)."""
+    c = sqlite3.connect(db_path)
+    try:
+        pid = c.execute("select id from programs limit 1").fetchone()[0]
+        c.execute("delete from schedule_cells")
+        for i in range(n):
+            c.execute("insert into schedule_cells (id, date, hour, program_id, kind) values (?,?,?,?, '본방')",
+                      (f"cell-{i}", f"2026-11-{1 + i // 17:02d}", 6 + i % 17, pid))
+        c.commit()
+    finally:
+        c.close()
+
+
+def _api(folder="", cells=3):
     cfg = prepare().config
     cfg.auto_export_dir = str(folder)
+    _add_cells(cfg.db_path, cells)   # cells=0이면 칸을 모두 지운다
     return Api(cfg)
 
 
@@ -147,10 +162,11 @@ def test_가져오기만_쓰는_PC는_켜지_않음(tmp_path):
     assert load_config().auto_export_dir == str(d)
     _drive_file(api, d)
     assert api.drive_import_run()["export_on"] is False
-    # 켜면 올림
+    # 켜도 바로 올리지 않는다
+    (d / AE.EXPORT_NAME).unlink()
     assert api.auto_export_enable(True)["ok"]
     assert api.auto_export_status()["enabled"] is True
-    assert (d / AE.EXPORT_NAME).is_file()
+    assert not (d / AE.EXPORT_NAME).exists()
     assert api.auto_export_enable(False)["ok"]
     assert load_config().auto_export_enabled is False
 
@@ -206,10 +222,10 @@ def test_자동_내보내기_진행_중이면_상한_뒤_오류_가져오지_않
     started, release = threading.Event(), threading.Event()
     real = AE.export_copy
 
-    def slow(db, folder):
+    def slow(db, folder, **kw):
         started.set()
         release.wait(5)
-        return real(db, folder)
+        return real(db, folder, **kw)
 
     monkeypatch.setattr(AE, "export_copy", slow)
     t = threading.Thread(target=api.exporter.export_now)
@@ -221,3 +237,27 @@ def test_자동_내보내기_진행_중이면_상한_뒤_오류_가져오지_않
     release.set()
     t.join(5)
     assert api.drive_import_run()["ok"]   # 끝난 뒤에는 가져옴
+
+
+def test_빈_드라이브_파일은_가져오기_막힘(tmp_path):
+    d = tmp_path / "d"
+    d.mkdir()
+    api = _api(d, cells=3)
+    _drive_file(api, d, extra=0)
+    _add_cells(d / AE.EXPORT_NAME, 0)   # 칸 0짜리 드라이브 파일
+    before = _count(api._cfg.db_path)
+    p = api.drive_import_preview()
+    assert p["ok"] and p["empty"] is True and p["cells"] == 0
+    r = api.drive_import_run({"name": p["name"], "mtime": p["mtime"], "size": p["size"]})
+    assert r["ok"] is False and r["errors"] == ["드라이브 파일이 비어 있습니다. 편성 담당 PC에서 다시 보내 달라고 하세요."]
+    assert _count(api._cfg.db_path) == before
+    assert api.drive_import_run()["ok"] is False
+
+
+def test_가져오기_미리보기에_칸_수와_마지막_달(tmp_path):
+    d = tmp_path / "d"
+    d.mkdir()
+    api = _api(d, cells=5)
+    _drive_file(api, d)
+    p = api.drive_import_preview()
+    assert p["cells"] == 5 and p["last_month"] == "2026-11" and p["empty"] is False

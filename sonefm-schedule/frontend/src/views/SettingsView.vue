@@ -109,18 +109,69 @@ async function pickDriveFolder() {
   if (f.path) act(api.driveFolderSet(f.path))
 }
 const driveWarn = ref('')
+function monthText(m) { return m ? `${Number(m.slice(5, 7))}월(${m.slice(0, 4)}년)` : '없음' }
+function showDriveExport(p) {
+  if (p.local_empty) {
+    flash('이 PC 편성이 비어 있어 드라이브로 보낼 수 없습니다. 먼저 [드라이브에서 가져오기]를 하세요.', true)
+    return
+  }
+  const d = p.drive
+  const driveLine = !p.exists
+    ? '드라이브: 아직 편성 파일이 없습니다'
+    : d
+      ? `드라이브: 칸 ${d.cells}개, ${monthText(d.last_month)}까지, ${p.modified}`
+      : `드라이브: 파일을 읽지 못했습니다, ${p.modified}`
+  const warn = p.ahead
+    ? `
+
+주의: 드라이브 편성이 이 PC보다 많거나 더 최근입니다. 이 PC가 오래된 편성이면 [취소]하고 먼저 [드라이브에서 가져오기]를 하세요.`
+    : ''
+  confirm.value = {
+    title: '드라이브로 보내기',
+    text: `${driveLine}
+이 PC: 칸 ${p.local.cells}개, ${monthText(p.local.last_month)}까지
+
+드라이브 편성을 이 PC 편성으로 바꿉니다. 바뀌기 전 드라이브 파일은 이 PC 백업 폴더에 보관됩니다.${warn}`,
+    choices: [{ label: '보내기', danger: true, run: async () => {
+      busy.value = true
+      const expected = p.exists ? { name: p.name, mtime: p.mtime, size: p.size } : { exists: false }
+      const r = await api.driveExportRun(expected)
+      busy.value = false
+      if (r.changed) {
+        flash(r.errors[0], true)
+        const np = await api.driveExportPreview()
+        if (np.ok) showDriveExport(np)   // 새 파일 정보로 다시 확인받는다
+        return
+      }
+      if (!r.ok) { flash(r.errors[0], true); await loadAll(); return }
+      flash(r.message || '드라이브로 보냈습니다.')
+      await loadAll()
+    } }],
+  }
+}
+async function askDriveExport() {
+  driveWarn.value = ''
+  const p = await api.driveExportPreview()
+  if (!p.ok) { flash(p.errors[0], true); return }
+  showDriveExport(p)
+}
 function showDriveImport(p) {
+  if (p.empty) {
+    flash('드라이브 파일이 비어 있습니다. 편성 담당 PC에서 다시 보내 달라고 하세요.', true)
+    return
+  }
   const old = p.older_than_local
     ? `
 
 주의: 이 파일(${p.modified})이 이 PC의 편성 파일(${p.local_modified})보다 오래됐습니다. 최신 편성이 맞는지 확인하세요.`
     : ''
+  const cellLine = p.cells != null ? `편성: 칸 ${p.cells}개, ${monthText(p.last_month)}까지\n` : ''
   confirm.value = {
     title: '드라이브에서 가져오기',
     text: `파일: ${p.name}
 수정 시각: ${p.modified}
 크기: ${p.size_kb}KB
-
+${cellLine}
 이 PC의 편성이 이 파일로 바뀝니다. 바뀌기 전 상태는 자동 백업됩니다.${old}`,
     choices: [{ label: '가져오기', danger: true, run: async () => {
       busy.value = true
@@ -233,7 +284,7 @@ onActivated(loadAll)
     <!-- 드라이브 자동 내보내기 -->
     <div class="card body">
       <h2>드라이브 폴더 (보내기·가져오기)</h2>
-      <p class="muted small">보내기와 가져오기가 같은 구글 드라이브 폴더를 씁니다. 편성 담당 PC는 "자동 내보내기"를 켜서 편성을 바꿀 때마다 사본(SoneFM편성표_데이터.db)을 올리고(마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때, 켤 때), 다른 PC는 "드라이브에서 가져오기"로 최신 편성을 받습니다. 공유 폴더는 드라이브에서 "바로가기 추가 → 내 드라이브"를 해야 이 PC에 보입니다.</p>
+      <p class="muted small">보내기와 가져오기가 같은 구글 드라이브 폴더를 씁니다. 편성 담당 PC는 "드라이브로 보내기"를 한 번 눌러 편성을 올리고(SoneFM편성표_데이터.db), 필요하면 "자동 내보내기"를 켭니다. 자동 내보내기는 켠 뒤 편성을 바꿀 때부터 올리며(마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때), 켤 때 바로 보내지는 않습니다. 이 PC 편성이 비어 있으면 드라이브로 보내지 않으니 먼저 "드라이브에서 가져오기"를 하세요. 다른 PC는 "드라이브에서 가져오기"로 최신 편성을 받고 자동 내보내기는 켜지 마세요. 공유 폴더는 드라이브에서 "바로가기 추가 → 내 드라이브"를 해야 이 PC에 보입니다.</p>
       <p v-if="autoExportError" class="danger-text">드라이브 폴더 상태를 읽지 못했습니다: {{ autoExportError }} 프로그램을 다시 켜 보고, 계속되면 담당자에게 알려 주세요.</p>
       <dl v-if="autoExport">
         <dt>폴더</dt>
@@ -249,12 +300,13 @@ onActivated(loadAll)
           <button v-if="!autoExport.enabled" class="btn btn-sm" :disabled="busy || !autoExport.folder" @click="act(api.autoExportEnable(true))">켜기</button>
           <button v-else class="btn btn-ghost btn-sm" :disabled="busy" @click="act(api.autoExportEnable(false))">끄기</button>
         </dd>
-        <dt>가져오기</dt>
+        <dt>보내기·가져오기</dt>
         <dd>
+          <button class="btn btn-sm" :disabled="busy || !autoExport.folder" @click="askDriveExport">드라이브로 보내기</button>
           <button class="btn btn-sm" :disabled="busy || !autoExport.folder" @click="askDriveImport">드라이브에서 가져오기</button>
-          <span class="muted small">폴더의 가장 최근 .db 파일로 이 PC의 편성을 바꿉니다.</span>
+          <span class="muted small">보내기는 이 PC 편성으로 드라이브 편성을 바꾸고, 가져오기는 폴더의 가장 최근 .db 파일로 이 PC 편성을 바꿉니다.</span>
         </dd>
-        <template v-if="autoExport.enabled">
+        <template v-if="autoExport.enabled || autoExport.last_at">
           <dt>마지막 결과</dt>
           <dd v-if="!autoExport.last_at" class="muted">아직 내보낸 적이 없습니다.</dd>
           <dd v-else-if="autoExport.last_ok">{{ autoExport.last_at }} 성공</dd>
