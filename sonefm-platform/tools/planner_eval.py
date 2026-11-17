@@ -1,7 +1,11 @@
 """플래너 평가 실행기 (AI_DESIGN 10절). 평가 세트는 저장소 밖에 둔다. 결과는 --out 경로에만 쓴다.
 
   python tools/planner_eval.py --set eval_set.csv --types task_types.json [--programs names.json]
-         --mode keyword --runs 1 --out result.json
+         --mode keyword|llm-light|llm-heavy|llm-only-heavy --runs 1 --out result.json
+  python tools/planner_eval.py ... --mode llm-light --estimate      (실제 호출 없이 호출 수·글자 수만 계산)
+
+LLM 모드는 실제 API를 부른다(돈이 든다). 키가 없거나 AI가 꺼져 있으면 호출하지 않고 안내만 한다.
+llm-only-heavy = 키워드 결과와 상관없이 모든 업무(계정 칸 제외)를 heavy로 보낸다(평가 D 구성).
 
 지표: M1 업무 단위 분류(F1·줄 완전 일치·업무 개수), M2 문장 종류, M3 추출값(전체·날짜 계열),
 M4 처리 방식(recipe 정밀도·재현율), M5·M6 LLM 회부(keyword 모드는 회부 대상 수만), M7 가리기 위반.
@@ -12,7 +16,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
+import statistics
 import sys
 from collections import Counter
 from datetime import date
@@ -25,10 +31,14 @@ sys.path.insert(0, str(ROOT))
 from hub import recipes as R  # noqa: E402
 from hub.planner import classify as C  # noqa: E402
 from hub.planner.masking import find_violations  # noqa: E402
+from hub.planner.llm import (BATCH_SIZE, FEATURE_EVAL, OUT_CHARS_PER_UNIT, OUT_TOKENS_PER_UNIT,  # noqa: E402
+                             LLMClassifier, build_messages, build_system, chunks)
 from hub.planner.plan import analyze_cells, build_llm_bundle, pending, plan_cells  # noqa: E402
 from hub.planner.types import load_task_types  # noqa: E402
 from hub.planner.values import norm_name  # noqa: E402
 
+MODES = {"keyword": (None, False), "llm-light": ("light", False), "llm-heavy": ("heavy", False),
+         "llm-only-heavy": ("heavy", True)}      # 모드 → (등급, 전부 보내기)
 DATE_KEYS = ("date", "month", "months", "period", "deadline")
 REPORT_KINDS = ("진행 보고", "완료 보고")
 
@@ -120,17 +130,21 @@ def count_matches(pred: list, gold: list) -> int:
 
 # ---- 실행 ---------------------------------------------------------------------------
 
-def predict_row(row: dict[str, Any], ref_types: dict, recipes: dict, programs: list[str]) -> dict[str, Any]:
-    cell = {"date": row["date"], "date_end": row["date"], "dept": row["dept"], "text": row["text"], "note": ""}
-    plan = plan_cells([cell], ref_types, recipes, programs, llm=None, now=None)
-    tasks = []
+def predict_all(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, programs: list[str],
+                llm: Any = None, all_units: bool = False) -> dict[str, Any]:
+    """모든 줄을 한 번에 계획한다(LLM 묶음 호출이 줄 경계를 넘어 묶이도록). by_row: 줄 번호 → {"tasks": [...]}."""
+    cells = [{"date": r["date"], "date_end": r["date"], "dept": r["dept"], "text": r["text"], "note": "",
+              "key": f"r{r['no']}"} for r in rows]
+    plan = plan_cells(cells, ref_types, recipes, programs, llm=llm, now=None, all_units=all_units)
+    out: dict[str, dict[str, Any]] = {r["no"]: {"tasks": []} for r in rows}
     for it in plan["items"]:
-        tasks.append({"type": it["type"], "values": it["values"], "sources": it["value_sources"],
-                      "mode": it["mode"], "kind": it["sentence_kind"]})
+        out[it["cell_key"][1:]]["tasks"].append({"type": it["type"], "values": it["values"], "sources": it["value_sources"],
+                                                 "mode": it["mode"], "kind": it["sentence_kind"]})
     for rp in plan["reports"]:
-        tasks.append({"type": rp["type"], "values": rp["values"], "sources": rp["value_sources"],
-                      "mode": "excluded", "kind": rp["sentence_kind"]})
-    return {"tasks": tasks, "plan": plan}
+        out[rp["cell_key"][1:]]["tasks"].append({"type": rp["type"], "values": rp["values"],
+                                                 "sources": rp["value_sources"], "mode": "excluded",
+                                                 "kind": rp["sentence_kind"]})
+    return {"by_row": out, "plan": plan}
 
 
 def row_kind(tasks: list[dict[str, Any]]) -> str:
@@ -148,7 +162,8 @@ def prf(tp: int, p: int, g: int) -> dict[str, float | int]:
     return {"tp": tp, "pred": p, "gold": g, "precision": round(pr, 4), "recall": round(rc, 4), "f1": round(f1, 4)}
 
 
-def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, programs: list[str]) -> dict[str, Any]:
+def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, programs: list[str],
+             clf: LLMClassifier | None = None, all_units: bool = False) -> dict[str, Any]:
     by_type = R.recipes_by_type(recipes)
     m1_tp = m1_p = m1_g = 0
     exact = multi_total = multi_ok = 0
@@ -157,9 +172,9 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
     r_tp = r_p = r_g = 0
     mode_ok = 0
     err_m1, err_m2, err_m4, err_m3 = [], [], [], []
+    predicted = predict_all(rows, ref_types, recipes, programs, llm=clf, all_units=all_units)
     for row in rows:
-        pr = predict_row(row, ref_types, recipes, programs)
-        tasks = pr["tasks"]
+        tasks = predicted["by_row"][row["no"]]["tasks"]
         gold = row["gold"]
         gt, pt = Counter(g["type"] for g in gold), Counter(t["type"] for t in tasks)
         tp = sum((gt & pt).values())
@@ -213,7 +228,7 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
     bundle = build_llm_bundle(recs, names=None, all_units=True)
     viol = sum(len(find_violations(it["text"])) for it in bundle["items"])
     n = len(rows)
-    return {
+    res = {
         "rows": n, "units": len(recs),
         "config": {"confirm_min": C.CONFIRM_MIN, "confirm_margin": C.CONFIRM_MARGIN},
         "M1": {**prf(m1_tp, m1_p, m1_g), "row_exact": round(exact / n, 4) if n else 0.0,
@@ -233,15 +248,96 @@ def evaluate(rows: list[dict[str, Any]], ref_types: dict, recipes: dict, program
                "credential_units_sent": sum(1 for it in bundle["items"] if any(r["id"] == it["id"] and r["credential"] for r in recs))},
         "errors": {"M1": err_m1, "M2": err_m2, "M3": err_m3, "M4": err_m4},
     }
+    if clf is not None:
+        res["M5_M6"] = llm_metrics(clf, len(rows), len(recs), res["M5_M6"], predicted["plan"])
+    return res
 
 
-def main(argv: list[str] | None = None) -> int:
+def _percentile(vals: list[float], q: float) -> float | None:
+    if not vals:
+        return None
+    v = sorted(vals)
+    return v[max(0, math.ceil(q * len(v)) - 1)]
+
+
+def llm_metrics(clf: LLMClassifier, rows: int, units: int, base: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    """M5·M6: 호출 수, 실패, 비용, 회부율, 지연, 캐시. 재시도 수는 main이 호출 기록(DB)에서 채운다."""
+    log = clf.calls_log
+    ok = [c for c in log if c["ok"]]
+    sent = sum(c["units"] for c in log)
+    cost = sum(c["cost_usd"] for c in log)
+    ms = [c["duration_ms"] for c in ok if c["duration_ms"] is not None]
+    return {**base, "mode": "llm", "tier": clf.tier, "model": clf.model, "calls": len(log),
+            "failed_calls": len(log) - len(ok), "retried_calls": None, "cost_usd": round(cost, 6),
+            "cost_per_row": round(cost / rows, 6) if rows else 0.0,
+            "cost_per_llm_unit": round(cost / sent, 6) if sent else 0.0,
+            "units_sent": sent, "referral_rate": round(sent / units, 4) if units else 0.0,
+            "latency_ms": {"median": statistics.median(ms) if ms else None, "p95": _percentile(ms, 0.95)},
+            "cache_read_tokens": sum(c["cache_read_tokens"] for c in ok),
+            "llm_failed_units": sum(1 for it in plan["items"] if "llm_failed" in it["flags"])}
+
+
+def retried_since(feature: str, since: str) -> int:
+    """호출 기록(DB)에서 이번 실행 중 재시도한 호출 수."""
+    from hub import db
+    with db.connect() as c:
+        return c.execute("SELECT COUNT(*) FROM ai_calls WHERE feature = ? AND at >= ? AND retried = 1",
+                         (feature, since)).fetchone()[0]
+
+
+def _leaves(d: Any, path: str = "") -> dict[str, float]:
+    out: dict[str, float] = {}
+    if isinstance(d, dict):
+        for k, v in d.items():
+            out.update(_leaves(v, f"{path}.{k}" if path else str(k)))
+    elif isinstance(d, (int, float)) and not isinstance(d, bool):
+        out[path] = d
+    return out
+
+
+def summarize_runs(results: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+    """반복 실행의 숫자 지표 평균·최소·최대 (M1~M6)."""
+    flat = [_leaves({k: r[k] for k in ("M1", "M2", "M3", "M4", "M5_M6")}) for r in results]
+    return {k: {"mean": round(statistics.mean(f[k] for f in flat), 4),
+                "min": min(f[k] for f in flat), "max": max(f[k] for f in flat)}
+            for k in flat[0] if all(k in f for f in flat)}
+
+
+def estimate(rows: list[dict[str, Any]], ref_types: dict, mode: str, batch_size: int = BATCH_SIZE) -> dict[str, Any]:
+    """실제 호출 없이: 이 모드에서 보낼 호출 수와 글자 수. 게이트웨이를 부르지 않는다."""
+    tier, all_units = MODES[mode]
+    cells = [{"date": r["date"], "date_end": r["date"], "dept": r["dept"], "text": r["text"], "note": "",
+              "key": f"r{r['no']}"} for r in rows]
+    recs = analyze_cells(cells, ref_types)
+    items = build_llm_bundle(recs, names=None, all_units=all_units)["items"] if tier else []
+    batches = chunks(items, batch_size)
+    msg_chars = [sum(len(m["content"]) for m in build_messages(b)) for b in batches]
+    return {"mode": mode, "tier": tier, "rows": len(rows), "units": len(recs), "units_sent": len(items),
+            "batch_size": batch_size, "calls": len(batches),
+            "system_chars": len(build_system(ref_types)) if batches else 0,
+            "messages_chars_per_call": msg_chars, "messages_chars_total": sum(msg_chars),
+            "est_output_tokens": len(items) * OUT_TOKENS_PER_UNIT, "est_output_chars": len(items) * OUT_CHARS_PER_UNIT,
+            "note": f"출력은 업무당 {OUT_TOKENS_PER_UNIT}토큰(약 {OUT_CHARS_PER_UNIT}자)으로 본 대략값. 실제 호출 없음"}
+
+
+def _ai_ready() -> tuple[bool, str]:
+    from hub.ai import settings
+    st = settings.status()
+    if not st["enabled"]:
+        return False, "AI 기능이 꺼져 있습니다. 플랫폼 설정 화면의 [AI]에서 AI를 켜 주세요."
+    if not st["has_key"]:
+        return False, "API 키가 없습니다. 플랫폼 설정 화면의 [AI]에서 방송국 API 키를 넣어 주세요."
+    return True, ""
+
+
+def main(argv: list[str] | None = None, ai_ready: Any = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--set", required=True, type=Path, help="평가 세트 CSV (저장소 밖)")
     ap.add_argument("--types", type=Path, default=None, help="업무 유형 사전 JSON (기본: 저장소의 task_types.json)")
     ap.add_argument("--programs", type=Path, default=None, help="프로그램 이름 목록 JSON (없으면 빈 목록)")
-    ap.add_argument("--mode", choices=["keyword"], default="keyword")
-    ap.add_argument("--runs", type=int, default=1)
+    ap.add_argument("--mode", choices=list(MODES), default="keyword")
+    ap.add_argument("--runs", type=int, default=1, help="LLM 모드 반복 횟수(지표 평균·최소·최대)")
+    ap.add_argument("--estimate", action="store_true", help="실제 호출 없이 호출 수·글자 수만 계산")
     ap.add_argument("--out", type=Path, default=None, help="결과 JSON 경로 (이 경로에만 쓴다)")
     a = ap.parse_args(argv)
     ref_types = load_task_types(a.types)
@@ -249,12 +345,35 @@ def main(argv: list[str] | None = None) -> int:
     recipes, problems = R.load_recipes([resource_dir() / "recipes"])
     if problems:
         print("\n".join(problems), file=sys.stderr)
-    result = evaluate(read_set(a.set), ref_types, recipes, read_programs(a.programs))
-    result["mode"], result["runs"] = a.mode, a.runs     # keyword 모드는 결과가 매번 같아 한 번만 돈다
+    rows, programs = read_set(a.set), read_programs(a.programs)
+    if a.estimate:
+        print(json.dumps(estimate(rows, ref_types, a.mode), ensure_ascii=False, indent=1))
+        return 0
+    tier, all_units = MODES[a.mode]
+    if tier is None:
+        result = evaluate(rows, ref_types, recipes, programs)
+        result["mode"], result["runs"] = a.mode, 1     # keyword 모드는 결과가 매번 같아 한 번만 돈다
+    else:
+        ok, why = (ai_ready or _ai_ready)()
+        if not ok:
+            print(f"LLM 모드를 시작하지 않았습니다(호출 없음). {why}", file=sys.stderr)
+            return 1
+        from hub import db
+        results = []
+        for _ in range(max(1, a.runs)):
+            since = db.now()
+            clf = LLMClassifier(ref_types, tier=tier, feature=FEATURE_EVAL)
+            res = evaluate(rows, ref_types, recipes, programs, clf=clf, all_units=all_units)
+            res["M5_M6"]["retried_calls"] = retried_since(FEATURE_EVAL, since)
+            results.append(res)
+        result = results[0]
+        result["mode"], result["runs"] = a.mode, len(results)
+        if len(results) > 1:
+            result["runs_summary"] = summarize_runs(results)
     text = json.dumps(result, ensure_ascii=False, indent=1)
     if a.out:
         a.out.write_text(text, encoding="utf-8")
-    brief = {k: result[k] for k in ("rows", "units", "M1", "M2", "M3", "M4", "M5_M6", "M7")}
+    brief = {k: result[k] for k in ("rows", "units", "M1", "M2", "M3", "M4", "M5_M6", "M7", "runs_summary") if k in result}
     print(json.dumps(brief, ensure_ascii=False, indent=1))
     return 0
 

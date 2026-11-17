@@ -1,6 +1,8 @@
 """플래너 본체: 칸 → 업무 단위 → 계획 JSON (AI_DESIGN 7.1~7.2). LLM은 `llm` 자리에 함수를 꽂으면 된다.
 
-llm(bundle) -> {"items": [{"id", "tasks": [{"type", "sentence_kind", "values"}]}]}  (이번에는 구현하지 않음)
+llm(bundle) -> {"items": [{"id", "tasks": [{"type", "sentence_kind", "values"}]}],
+                 "failed_ids": [...](선택), "stats": {"calls", "tier", "model", "cost_usd"}(선택)}
+실제 구현은 hub/planner/llm.py의 LLMClassifier.
 llm이 None이면: 애매 = 1위 유형, 미분류 = misc_manual, 애매한 문장 종류 = 규칙 결과.
 """
 from __future__ import annotations
@@ -56,7 +58,7 @@ def build_llm_bundle(recs: list[dict[str, Any]], names: list[str] | None = None,
     for r in recs:
         if r["credential"] or not (all_units or pending(r)):
             continue
-        items.append({"id": r["id"], "dept": r["dept"], "text": mask_names(r["text"], names),
+        items.append({"id": r["id"], "date": r["ref"].isoformat(), "dept": r["dept"], "text": mask_names(r["text"], names),
                       "sentence_kind_unsure": r["kind_unsure"],
                       "keyword": {"top": r["keyword"]["top"], "second": r["keyword"]["second"]}})
     return {"items": items}
@@ -198,16 +200,26 @@ def analyze_cells(cells: list[dict[str, Any]], ref_types: dict[str, Any], idx: C
 
 def plan_cells(cells: list[dict[str, Any]], ref_types: dict[str, Any], recipes: dict[str, dict[str, Any]],
                programs: list[str] | None = None, llm: LLM_FN | None = None, *, names: list[str] | None = None,
-               now: datetime | None = None, source: dict[str, Any] | None = None) -> dict[str, Any]:
+               now: datetime | None = None, source: dict[str, Any] | None = None,
+               all_units: bool = False) -> dict[str, Any]:
     """cells = [{date, date_end, dept, text, note}] → 계획 dict(AI_DESIGN 7.2). 비고(note)는 쓰지 않는다(G5)."""
     programs = list(programs or [])
     recs = analyze_cells(cells, ref_types)
-    referred = [r for r in recs if pending(r)]
+    referred = ([r for r in recs if not r["credential"]] if all_units and llm is not None
+                else [r for r in recs if pending(r)])
     llm_info = {"used": False, "tier": None, "model": None, "calls": 0, "cost_usd": 0.0}
     if llm is not None and referred:
-        result = llm(build_llm_bundle(recs, names))
+        bundle = build_llm_bundle(recs, names, all_units)
+        sent = {it["id"] for it in bundle["items"]}
+        result = llm(bundle) or {}
         recs = apply_llm_result(recs, result, ref_types, programs)
-        llm_info["used"], llm_info["calls"] = True, 1
+        failed = set(result.get("failed_ids") or [])
+        for r in recs:
+            if r["id"] in sent and (r["id"] in failed or r["classified_by"] != "llm") and "llm_failed" not in r["flags"]:
+                r["flags"].append("llm_failed")
+        st = result.get("stats") or {}
+        llm_info.update({"used": True, "tier": st.get("tier"), "model": st.get("model"),
+                         "calls": st.get("calls", 1), "cost_usd": round(st.get("cost_usd", 0.0), 6)})
     for r in recs:
         if r["type"] is None:
             r["type"] = C.decide(r["keyword"])
