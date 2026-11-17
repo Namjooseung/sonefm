@@ -11,3 +11,6 @@ sonefm-schedule/기존/
 
 # 디자인 점검 플러그인 세션 캐시
 **/.impeccable/hook.cache.json
+
+# 평가·참고용 실제 자료(업무일지·기존 편성표) — 민감 정보 포함, 공개 저장소에 올리지 않는다
+eval/
