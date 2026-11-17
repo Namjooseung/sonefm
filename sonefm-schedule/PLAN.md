@@ -394,3 +394,4 @@ sonefm-scheduler/
 - 동기화: 공유 클라우드 폴더 + 편집 잠금 파일 방식부터 검토.
 
 - **2026-11-17: 드라이브 폴더 자동 내보내기**(바꿀 때 60초 후·닫을 때·폴더 지정 시), 고정 이름 `SoneFM편성표_데이터.db`, 임시 파일(`.SoneFM편성표_데이터.db.tmp`) 후 교체. 사본만 올리고 쓰는 DB는 옮기지 않는다. 폴더는 config.json `auto_export_dir`(빈 값 = 꺼짐), 마지막 결과는 `Documents\SoneFM\auto_export_status.json`. 규칙·실행은 `app/services/auto_export.py`, 변경 표시는 `Api._write`. 업무자동화 PC의 허브가 이 폴더의 .db를 읽는다.
+- **2026-11-17: 드라이브 폴더에서 가져오기 버튼**(같은 폴더 auto_export_dir, 최신 .db, 확인 후 백업·교체, 자동 내보내기 표시 안 함). 폴더의 *.db 중 수정 시각이 가장 최근 것(이름 무관, 임시 파일 제외)을 로컬 임시 위치로 복사한 뒤 기존 복원(data.restore: 검사·마이그레이션·백업·교체)을 쓴다. 미리보기(이름·수정 시각·크기, 이 PC보다 오래되면 경고) → 확인 → 받기. 가져오기는 mark_changed를 부르지 않는다(받은 것을 다시 올리지 않음). 자동 내보내기 켜짐은 config.json auto_export_enabled(키 없음 = 폴더가 있으면 켜짐)로 폴더 지정과 분리 - 가져오기만 쓰는 PC가 덮어쓰지 않도록 폴더만 정하면 꺼진 채 시작. 코드: app/services/drive_import.py, Api.drive_*.

@@ -102,11 +102,46 @@ async function changeBackupDir() {
   const f = await api.pickFolder()
   if (f.path) act(api.backupOptions(f.path, data.value.backup_keep))
 }
-async function pickAutoExport() {
+async function pickDriveFolder() {
   const f = await api.pickFolder()
-  if (f.path) act(api.autoExportSet(f.path))
+  if (f.path) act(api.driveFolderSet(f.path))
 }
-function stopAutoExport() { act(api.autoExportSet('')) }
+const driveWarn = ref('')
+function showDriveImport(p) {
+  const old = p.older_than_local
+    ? `
+
+주의: 이 파일(${p.modified})이 이 PC의 편성 파일(${p.local_modified})보다 오래됐습니다. 최신 편성이 맞는지 확인하세요.`
+    : ''
+  confirm.value = {
+    title: '드라이브에서 가져오기',
+    text: `파일: ${p.name}
+수정 시각: ${p.modified}
+크기: ${p.size_kb}KB
+
+이 PC의 편성이 이 파일로 바뀝니다. 바뀌기 전 상태는 자동 백업됩니다.${old}`,
+    choices: [{ label: '가져오기', danger: true, run: async () => {
+      busy.value = true
+      const r = await api.driveImportRun({ name: p.name, mtime: p.mtime, size: p.size })
+      busy.value = false
+      if (r.changed) {
+        flash(r.errors[0], true)
+        showDriveImport(r)   // 새 파일 정보로 다시 확인받는다
+        return
+      }
+      if (!r.ok) { flash(r.errors[0], true); return }
+      if (r.message) flash(r.message)
+      await loadAll()
+      if (r.export_on) driveWarn.value = '이 PC에서 편성을 고치면 드라이브의 파일을 덮어씁니다. 편성 담당 PC가 아니면 자동 내보내기를 꺼 주세요.'
+    } }],
+  }
+}
+async function askDriveImport() {
+  driveWarn.value = ''
+  const p = await api.driveImportPreview()
+  if (!p.ok) { flash(p.errors[0], true); return }
+  showDriveImport(p)
+}
 function runChoice(c) { confirm.value = null; c.run() }
 
 onMounted(loadAll)
@@ -195,15 +230,26 @@ onActivated(loadAll)
 
     <!-- 드라이브 자동 내보내기 -->
     <div v-if="autoExport" class="card body">
-      <h2>드라이브 자동 내보내기</h2>
-      <p class="muted small">편성을 바꾸면 구글 드라이브 폴더에 데이터 사본(SoneFM편성표_데이터.db)을 자동으로 올립니다. 마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때, 폴더를 처음 고를 때 올라갑니다. 지금 쓰는 데이터는 옮기지 않고 사본만 올립니다.</p>
+      <h2>드라이브 폴더 (보내기·가져오기)</h2>
+      <p class="muted small">보내기와 가져오기가 같은 구글 드라이브 폴더를 씁니다. 편성 담당 PC는 "자동 내보내기"를 켜서 편성을 바꿀 때마다 사본(SoneFM편성표_데이터.db)을 올리고(마지막 변경 후 약 1분 뒤, 프로그램을 닫을 때, 켤 때), 다른 PC는 "드라이브에서 가져오기"로 최신 편성을 받습니다. 공유 폴더는 드라이브에서 "바로가기 추가 → 내 드라이브"를 해야 이 PC에 보입니다.</p>
       <dl>
         <dt>폴더</dt>
         <dd>
-          <span v-if="autoExport.enabled">{{ autoExport.folder }}</span>
+          <span v-if="autoExport.folder">{{ autoExport.folder }}</span>
+          <span v-else class="muted">정해지지 않았습니다</span>
+          <button class="btn btn-sm" :disabled="busy" @click="pickDriveFolder">폴더 고르기</button>
+        </dd>
+        <dt>자동 내보내기</dt>
+        <dd>
+          <span v-if="autoExport.enabled">켜져 있습니다 (편성 담당 PC용)</span>
           <span v-else class="muted">꺼져 있습니다</span>
-          <button class="btn btn-sm" :disabled="busy" @click="pickAutoExport">폴더 고르기</button>
-          <button v-if="autoExport.enabled" class="btn btn-ghost btn-sm" :disabled="busy" @click="stopAutoExport">끄기</button>
+          <button v-if="!autoExport.enabled" class="btn btn-sm" :disabled="busy || !autoExport.folder" @click="act(api.autoExportEnable(true))">켜기</button>
+          <button v-else class="btn btn-ghost btn-sm" :disabled="busy" @click="act(api.autoExportEnable(false))">끄기</button>
+        </dd>
+        <dt>가져오기</dt>
+        <dd>
+          <button class="btn btn-sm" :disabled="busy || !autoExport.folder" @click="askDriveImport">드라이브에서 가져오기</button>
+          <span class="muted small">폴더의 가장 최근 .db 파일로 이 PC의 편성을 바꿉니다.</span>
         </dd>
         <template v-if="autoExport.enabled">
           <dt>마지막 결과</dt>
@@ -212,6 +258,7 @@ onActivated(loadAll)
           <dd v-else class="danger-text">{{ autoExport.at }} 실패: {{ autoExport.message }}</dd>
         </template>
       </dl>
+      <p v-if="driveWarn" class="danger-text">{{ driveWarn }}</p>
     </div>
 
     <!-- 백업 -->

@@ -83,4 +83,8 @@ export const dbMove = (folder, mode) => call('db_move', folder, mode)
 export const backupOptions = (folder, keep) => call('backup_options', folder, keep)
 /** 드라이브 폴더 자동 내보내기. folder가 빈 값이면 끈다 */
 export const autoExportStatus = () => call('auto_export_status')
-export const autoExportSet = (folder) => call('auto_export_set', folder)
+/** 드라이브 폴더만 정하기(보내기·가져오기 공용), 자동 내보내기 켜기·끄기, 드라이브에서 가져오기 */
+export const driveFolderSet = (folder) => call('drive_folder_set', folder)
+export const autoExportEnable = (on) => call('auto_export_enable', on)
+export const driveImportPreview = () => call('drive_import_preview')
+export const driveImportRun = (expected) => call('drive_import_run', expected)

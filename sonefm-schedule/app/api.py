@@ -21,7 +21,9 @@ from app.repository import meta_repo
 from app.repository import change_log_repo
 from app.services import cell_edit, month_status
 from app.services import data as data_service
+from app.services import drive_import
 from app.services.auto_export import AutoExporter
+from app.services.auto_export import cfg_enabled as auto_export_enabled
 from app.services import excel as excel_service
 from app.services import journal as journal_service
 from app.services import report as report_service
@@ -320,18 +322,58 @@ class Api:
     def auto_export_status(self) -> dict[str, Any]:
         return self._safe("auto_export_status", lambda: {"ok": True, **self.exporter.status()})
 
-    def auto_export_set(self, folder: str | None) -> dict[str, Any]:
-        """폴더를 고르면 켜고 바로 한 번 내보낸다. 비우면 끈다."""
+    def drive_folder_set(self, folder: str | None) -> dict[str, Any]:
+        """드라이브 폴더만 정한다(보내기·가져오기 공용). 자동 내보내기 켜짐 여부는 바꾸지 않되,
+        새로 정하는 PC는 꺼진 채로 시작한다(가져오기만 쓰는 PC가 실수로 덮어쓰지 않도록). 비우면 폴더를 지운다."""
         def run() -> dict[str, Any]:
             new = (folder or "").strip()
             if new and not Path(new).is_dir():
                 return {"ok": False, "errors": ["폴더를 찾지 못했습니다. 드라이브 폴더를 다시 골라 주세요."]}
+            was_on = auto_export_enabled(self._cfg)
             self._cfg.auto_export_dir = new
+            self._cfg.auto_export_enabled = True if (new and was_on) else False
             save_config(self._cfg)
             if not new:
+                return {"ok": True, "message": "드라이브 폴더를 지웠습니다."}
+            if was_on:
+                self.exporter.export_now()
+            return {"ok": True, "message": "드라이브 폴더를 정했습니다."}
+        return self._safe("drive_folder_set", run)
+
+    def auto_export_enable(self, on: bool) -> dict[str, Any]:
+        """자동 내보내기 켜기·끄기(폴더는 그대로). 켜면 바로 한 번 내보낸다."""
+        def run() -> dict[str, Any]:
+            if on and not (self._cfg.auto_export_dir or "").strip():
+                return {"ok": False, "errors": ["드라이브 폴더를 먼저 골라 주세요."]}
+            self._cfg.auto_export_enabled = bool(on)
+            save_config(self._cfg)
+            if not on:
                 return {"ok": True, "message": "자동 내보내기를 껐습니다."}
             result = self.exporter.export_now()
             if not result.get("ok"):
                 return {"ok": False, "errors": result["errors"]}
             return {"ok": True, "message": "자동 내보내기를 켜고 지금 한 번 내보냈습니다."}
-        return self._safe("auto_export_set", run)
+        return self._safe("auto_export_enable", run)
+
+    def drive_import_preview(self) -> dict[str, Any]:
+        """드라이브 폴더에서 가져올 최신 파일 정보(이름·수정 시각·크기, 이 PC보다 오래됐는지)."""
+        return self._safe("drive_import_preview", lambda: drive_import.preview(self._cfg))
+
+    def drive_import_run(self, expected: dict[str, Any] | None = None) -> dict[str, Any]:
+        """최신 파일로 이 PC의 편성을 바꾼다(검사·백업 후 교체). 자동 내보내기 변경 표시는 하지 않는다.
+
+        expected: 미리보기가 돌려준 name·mtime·size. 그 사이 최신 파일이 바뀌었으면 가져오지 않고 changed를 돌려준다.
+        가져오는 동안에는 자동 내보내기가 돌지 않는다.
+        """
+        def run() -> dict[str, Any]:
+            if not self.exporter.hold():
+                return {"ok": False, "errors": ["자동 내보내기가 진행 중입니다. 잠시 뒤 다시 눌러 주세요."]}
+            try:
+                return drive_import.import_latest(self._cfg, expected)
+            finally:
+                self.exporter.release_hold()
+        result = self._safe("drive_import_run", run)
+        if result.get("ok"):
+            self._undo.clear()
+            result["export_on"] = auto_export_enabled(self._cfg)
+        return result

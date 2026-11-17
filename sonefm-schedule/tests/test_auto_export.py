@@ -13,6 +13,12 @@ def _api(folder=""):
     return Api(cfg)
 
 
+def _enable(api, folder):
+    """폴더를 정하고 자동 내보내기를 켠다(바로 한 번 내보냄)."""
+    assert api.drive_folder_set(str(folder))["ok"]
+    return api.auto_export_enable(True)
+
+
 class Clock:
     def __init__(self):
         self.t = 1000.0
@@ -46,7 +52,7 @@ def test_임시파일_후_교체하고_결과가_열리고_내용이_같다(tmp_
     dest = tmp_path / "드라이브"
     dest.mkdir()
     api = _api(dest)
-    r = api.auto_export_set(str(dest))
+    r = _enable(api, dest)
     assert r["ok"], r
     out = dest / AE.EXPORT_NAME
     assert out.is_file()
@@ -61,7 +67,7 @@ def test_기존_파일을_덮어씀(tmp_path):
     dest.mkdir()
     (dest / AE.EXPORT_NAME).write_bytes(b"old")
     api = _api(dest)
-    r = api.auto_export_set(str(dest))
+    r = _enable(api, dest)
     assert r["ok"], r
     assert _count(dest / AE.EXPORT_NAME) == _count(api._cfg.db_path)
 
@@ -75,7 +81,7 @@ def test_폴더가_없으면_실패_상태만_남김(tmp_path):
     assert st["ok"] is False and "드라이브" in st["message"]
     assert not (tmp_path / "없는폴더").exists()   # 폴더를 만들지 않는다
     # 화면에서 없는 폴더를 고르면 설정은 바뀌지 않는다
-    r = api.auto_export_set(str(tmp_path / "또없음"))
+    r = api.drive_folder_set(str(tmp_path / "또없음"))
     assert r["ok"] is False
 
 
@@ -83,8 +89,8 @@ def test_폴더를_비우면_꺼짐(tmp_path):
     dest = tmp_path / "d"
     dest.mkdir()
     api = _api(dest)
-    api.auto_export_set(str(dest))
-    assert api.auto_export_set("")["ok"]
+    _enable(api, dest)
+    assert api.drive_folder_set("")["ok"]
     assert load_config().auto_export_dir == ""
     assert api.auto_export_status()["enabled"] is False
 

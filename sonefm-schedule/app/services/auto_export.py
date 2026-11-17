@@ -29,11 +29,16 @@ TMP_NAME = ".SoneFM편성표_데이터.db.tmp"
 DEBOUNCE_SECONDS = 60.0
 STATUS_FILE = "auto_export_status.json"
 CLOSE_WAIT_SECONDS = 15.0   # 창을 닫을 때 진행 중인 내보내기를 기다리는 상한
+IMPORT_WAIT_SECONDS = 10.0  # 가져오기 전에 진행 중인 내보내기를 기다리는 상한
 
 
-def is_enabled(folder: str | None) -> bool:
-    """내보내기 폴더가 비어 있으면 꺼진 것."""
-    return bool((folder or "").strip())
+def is_enabled(folder: str | None, enabled: bool | None = None) -> bool:
+    """폴더가 비어 있으면 꺼진 것. enabled가 None(설정 키 없음)이면 폴더가 있을 때 켜짐, False면 꺼짐."""
+    return bool((folder or "").strip()) and enabled is not False
+
+
+def cfg_enabled(cfg: AppConfig) -> bool:
+    return is_enabled(cfg.auto_export_dir, cfg.auto_export_enabled)
 
 
 def is_due(last_change: float | None, now: float, debounce: float = DEBOUNCE_SECONDS) -> bool:
@@ -73,12 +78,13 @@ class AutoExporter:
 
     def __init__(self, cfg: AppConfig, clock: Callable[[], float] = time.monotonic,
                  debounce: float = DEBOUNCE_SECONDS, use_timer: bool = True,
-                 close_wait: float = CLOSE_WAIT_SECONDS) -> None:
+                 close_wait: float = CLOSE_WAIT_SECONDS, import_wait: float = IMPORT_WAIT_SECONDS) -> None:
         self._cfg = cfg
         self._clock = clock
         self._debounce = debounce
         self._use_timer = use_timer
         self._close_wait = close_wait
+        self._import_wait = import_wait
         self._state = threading.Lock()     # 변경 표시 보호
         self._running = threading.Lock()   # 내보내기 한 번에 하나
         self._last_change: float | None = None
@@ -106,7 +112,7 @@ class AutoExporter:
 
     def status(self) -> dict[str, Any]:
         """설정 화면용: 켜짐 여부, 폴더, 마지막 시각·결과."""
-        out: dict[str, Any] = {"enabled": is_enabled(self._cfg.auto_export_dir),
+        out: dict[str, Any] = {"enabled": cfg_enabled(self._cfg),
                                "folder": self._cfg.auto_export_dir, "at": None, "ok": None, "message": ""}
         try:
             raw = json.loads(self._status_path().read_text(encoding="utf-8"))
@@ -118,7 +124,7 @@ class AutoExporter:
     # ── 변경 표시·실행 ──
     def mark_changed(self) -> None:
         """편성 데이터를 바꾸는 호출이 성공한 뒤 부른다. 꺼져 있으면 아무것도 하지 않는다."""
-        if not is_enabled(self._cfg.auto_export_dir):
+        if not cfg_enabled(self._cfg):
             return
         with self._state:
             self._seq += 1
@@ -141,7 +147,7 @@ class AutoExporter:
         with self._state:
             if self._timer:
                 self._timer.cancel()
-            enabled = is_enabled(self._cfg.auto_export_dir)
+            enabled = cfg_enabled(self._cfg)
         if not enabled:
             return False
         if not self._running.acquire(timeout=self._close_wait):
@@ -156,10 +162,17 @@ class AutoExporter:
 
     def export_now(self) -> dict[str, Any]:
         """폴더를 처음 고른 직후 등: 바로 한 번. 결과를 돌려준다."""
-        if not is_enabled(self._cfg.auto_export_dir):
+        if not cfg_enabled(self._cfg):
             return {"ok": True, "skipped": True}
         with self._running:
             return self._do_export()
+
+    def hold(self) -> bool:
+        """가져오기용: 진행 중인 내보내기가 끝나기를 상한까지 기다린 뒤 내보내기를 막는다. 못 막으면 False. 끝나면 release_hold()."""
+        return self._running.acquire(timeout=self._import_wait)
+
+    def release_hold(self) -> None:
+        self._running.release()
 
     def _export(self) -> bool:
         if not self._running.acquire(blocking=False):
@@ -171,7 +184,7 @@ class AutoExporter:
 
     def _do_export(self) -> dict[str, Any]:
         folder = self._cfg.auto_export_dir
-        if not is_enabled(folder):
+        if not cfg_enabled(self._cfg):
             return {"ok": True, "skipped": True}
         with self._state:
             seq = self._seq

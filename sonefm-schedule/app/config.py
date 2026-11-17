@@ -37,7 +37,9 @@ class AppConfig:
     db_path: str
     backup_dir: str
     backup_keep: int = DEFAULT_BACKUP_KEEP
-    auto_export_dir: str = ""   # 드라이브 자동 내보내기 폴더. 빈 값 = 꺼짐
+    auto_export_dir: str = ""   # 드라이브 폴더(자동 내보내기·가져오기 공용). 빈 값 = 폴더 없음
+    # 자동 내보내기 켜짐. None(키 없음) = 폴더가 있으면 켜짐(예전 설정 호환), False = 가져오기만 쓰는 PC
+    auto_export_enabled: bool | None = None
 
 
 def default_config() -> AppConfig:
